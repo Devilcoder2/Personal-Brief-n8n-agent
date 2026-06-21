@@ -8,118 +8,305 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        260,
-        240
+        100,
+        400
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://briefing-api:8000/ingest",
+        "url": "http://briefing-api:8000/ingest?source=youtube",
         "options": {}
       },
-      "id": "e2fcfba8-9b0e-4cb2-b430-bf8c20172cd9",
-      "name": "Trigger Ingestion",
+      "id": "ing-yt-id",
+      "name": "Ingest YouTube",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        440,
-        240
+        300,
+        100
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://briefing-api:8000/process",
+        "url": "http://briefing-api:8000/ingest?source=hn",
         "options": {}
       },
-      "id": "18f154bf-5ad6-4074-8848-6c84c17fae4b",
-      "name": "Deduplicate & Rank",
+      "id": "ing-hn-id",
+      "name": "Ingest Hacker News",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        620,
-        240
-      ]
-    },
-    {
-      "parameters": {
-        "amount": 10,
-        "unit": "seconds"
-      },
-      "id": "7f61c3ea-a4e9-4e0d-bfbf-26d83e20bfd1",
-      "name": "Wait 10s",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1,
-      "position": [
-        800,
-        240
-      ]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "http://briefing-api:8000/process-status",
-        "options": {}
-      },
-      "id": "a1f9e2b1-6a0b-4e6f-9988-cb92671f2cd1",
-      "name": "Check Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        980,
-        240
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{$json.status}}",
-              "value2": "completed"
-            }
-          ]
-        }
-      },
-      "id": "6a3f9e2d-c12b-4e0d-b8d9-cc827d30bf65",
-      "name": "Is Complete?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        1160,
-        240
+        300,
+        220
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://briefing-api:8000/generate-briefing",
+        "url": "http://briefing-api:8000/ingest?source=reddit",
+        "options": {}
+      },
+      "id": "ing-rd-id",
+      "name": "Ingest Reddit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/ingest?source=github",
+        "options": {}
+      },
+      "id": "ing-gh-id",
+      "name": "Ingest GitHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/ingest?source=arxiv",
+        "options": {}
+      },
+      "id": "ing-ax-id",
+      "name": "Ingest arXiv",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/ingest?source=blog",
+        "options": {}
+      },
+      "id": "ing-bg-id",
+      "name": "Ingest Blogs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/generate-briefing?source=youtube",
         "options": {
           "timeout": 180000
         }
       },
-      "id": "ff876a3e-c0fa-40f4-90a6-16f5c88b7d90",
-      "name": "Compile Briefing",
+      "id": "comp-yt-id",
+      "name": "Compile YouTube Briefing",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1360,
-        180
+        520,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/generate-briefing?source=hn",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "comp-hn-id",
+      "name": "Compile HN Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/generate-briefing?source=reddit",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "comp-rd-id",
+      "name": "Compile Reddit Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/generate-briefing?source=github",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "comp-gh-id",
+      "name": "Compile GitHub Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/generate-briefing?source=arxiv",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "comp-ax-id",
+      "name": "Compile arXiv Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/generate-briefing?source=blog",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "comp-bg-id",
+      "name": "Compile Blogs Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        700
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "return {\n  html: $input.item.json.html,\n  date: $input.item.json.date,\n  smtp_sender: $input.item.json.smtp_sender,\n  smtp_receiver: $input.item.json.smtp_receiver\n};"
+        "jsCode": "return {\n  fragment: $input.item.json.fragment || '',\n  date: $input.item.json.date,\n  smtp_sender: $input.item.json.smtp_sender,\n  smtp_receiver: $input.item.json.smtp_receiver\n};"
       },
-      "id": "a90dfb9e-64d8-4903-a185-3bc8b6cf7935",
-      "name": "Parse & Style HTML",
+      "id": "parse-yt-id",
+      "name": "Parse YouTube HTML",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1560,
-        180
+        740,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  fragment: $input.item.json.fragment || ''\n};"
+      },
+      "id": "parse-hn-id",
+      "name": "Parse HN HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  fragment: $input.item.json.fragment || ''\n};"
+      },
+      "id": "parse-rd-id",
+      "name": "Parse Reddit HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  fragment: $input.item.json.fragment || ''\n};"
+      },
+      "id": "parse-gh-id",
+      "name": "Parse GitHub HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  fragment: $input.item.json.fragment || ''\n};"
+      },
+      "id": "parse-ax-id",
+      "name": "Parse arXiv HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  fragment: $input.item.json.fragment || ''\n};"
+      },
+      "id": "parse-bg-id",
+      "name": "Parse Blogs HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const youtube = $items(\"Parse YouTube HTML\")[0]?.json?.fragment || \"\";\nconst hn = $items(\"Parse HN HTML\")[0]?.json?.fragment || \"\";\nconst reddit = $items(\"Parse Reddit HTML\")[0]?.json?.fragment || \"\";\nconst github = $items(\"Parse GitHub HTML\")[0]?.json?.fragment || \"\";\nconst arxiv = $items(\"Parse arXiv HTML\")[0]?.json?.fragment || \"\";\nconst blog = $items(\"Parse Blogs HTML\")[0]?.json?.fragment || \"\";\n\nconst date = $items(\"Parse YouTube HTML\")[0]?.json?.date || new Date().toISOString().split('T')[0];\nconst smtp_sender = $items(\"Parse YouTube HTML\")[0]?.json?.smtp_sender || \"\";\nconst smtp_receiver = $items(\"Parse YouTube HTML\")[0]?.json?.smtp_receiver || \"\";\n\nconst combinedFragments = [youtube, hn, reddit, github, arxiv, blog].filter(Boolean).join(\"\\n\");\n\nconst finalHtml = `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Daily Developer Briefing</title>\n  <style>\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n      line-height: 1.6;\n      color: #1e293b;\n      background-color: #f8fafc;\n      margin: 0;\n      padding: 40px 10px;\n      -webkit-font-smoothing: antialiased;\n    }\n    .wrapper {\n      max-width: 640px;\n      margin: 0 auto;\n      background-color: #ffffff;\n      border-radius: 16px;\n      overflow: hidden;\n      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);\n      border: 1px solid #e2e8f0;\n    }\n    .top-gradient-bar {\n      height: 6px;\n      background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);\n    }\n    .header {\n      padding: 40px 30px 25px 30px;\n      text-align: center;\n      background-color: #ffffff;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 24px;\n      font-weight: 800;\n      letter-spacing: 1.5px;\n      text-transform: uppercase;\n      color: #0f172a;\n    }\n    .header p {\n      margin: 8px 0 0 0;\n      font-size: 13.5px;\n      color: #64748b;\n      font-weight: 500;\n    }\n    .date-badge {\n      display: inline-block;\n      margin-top: 14px;\n      background-color: #e0e7ff;\n      color: #4338ca;\n      font-size: 12px;\n      font-weight: 700;\n      padding: 4px 14px;\n      border-radius: 100px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .content {\n      padding: 10px 30px 35px 30px;\n    }\n    .section-header {\n      color: #0f172a;\n      font-size: 16px;\n      font-weight: 800;\n      margin-top: 35px;\n      margin-bottom: 20px;\n      padding-bottom: 8px;\n      border-bottom: 2px solid #f1f5f9;\n      text-transform: uppercase;\n      letter-spacing: 1px;\n    }\n    .insights-card {\n      background-color: #faf5ff;\n      border-left: 4px solid #a855f7;\n      border-radius: 8px;\n      padding: 24px;\n      margin-bottom: 30px;\n    }\n    .insights-title {\n      font-size: 12px;\n      font-weight: 800;\n      color: #7e22ce;\n      text-transform: uppercase;\n      letter-spacing: 1px;\n      margin-bottom: 16px;\n    }\n    .insights-p {\n      font-size: 14px;\n      color: #3b0764;\n      margin-bottom: 14px;\n      line-height: 1.6;\n    }\n    .insights-sub-header {\n      font-size: 13.5px;
+      font-weight: 700;
+      color: #581c87;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }\n    .insights-list {\n      margin: 8px 0 16px 0;\n      padding-left: 20px;\n    }\n    .insights-list-item {\n      font-size: 14px;\n      color: #3b0764;\n      margin-bottom: 6px;\n      line-height: 1.55;\n    }\n    .must-watch-card {\n      background-color: #ffffff;\n      border: 1px solid #e2e8f0;\n      border-left: 4px solid #f59e0b;\n      border-radius: 10px;\n      padding: 24px;\n      margin-bottom: 20px;\n      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);\n    }\n    .must-watch-card h3 {\n      margin: 0 0 12px 0;\n      font-size: 17px;\n      font-weight: 700;\n      line-height: 1.45;\n    }\n    .must-watch-card h3 a {\n      color: #0f172a;\n      text-decoration: none;\n    }\n    .must-watch-card h3 a:hover {\n      color: #4f46e5;\n    }\n    .meta-row {\n      margin-bottom: 16px;\n    }\n    .channel-badge {\n      display: inline-block;\n      background-color: #fef3c7;\n      color: #d97706;\n      font-size: 11px;\n      font-weight: 700;\n      padding: 3px 10px;\n      border-radius: 6px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      margin-right: 12px;\n    }\n    .btn-watch {\n      display: inline-block;\n      color: #4f46e5;\n      text-decoration: none;\n      font-weight: 700;\n      font-size: 13px;\n    }\n    .btn-watch:hover {\n      text-decoration: underline;\n    }\n    .must-watch-card blockquote {\n      margin: 16px 0 0 0;\n      padding-left: 14px;\n      border-left: 2px solid #e2e8f0;\n      font-style: normal;\n      font-size: 13.5px;\n      color: #475569;\n      line-height: 1.6;\n    }\n    .video-list {\n      list-style: none;\n      padding: 0;\n      margin: 0;\n    }\n    .video-list-item {\n      border-bottom: 1px solid #f1f5f9;\n      padding: 16px 0;\n    }\n    .video-list-item:last-child {\n      border-bottom: none;\n      padding-bottom: 0;\n    }\n    .video-list-item:first-child {\n      padding-top: 0;\n    }\n    .video-title-link {\n      color: #0f172a;\n      font-weight: 600;\n      font-size: 15px;\n      text-decoration: none;\n      line-height: 1.4;\n    }\n    .video-title-link:hover {\n      color: #4f46e5;\n    }\n    .channel-badge-small {\n      display: inline-block;\n      background-color: #f1f5f9;\n      color: #475569;\n      font-size: 10px;\n      font-weight: 700;\n      padding: 2px 8px;\n      border-radius: 4px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      margin-left: 8px;\n      vertical-align: middle;\n    }\n    .video-list-item .desc {\n      margin: 6px 0 0 0;\n      font-size: 13.5px;\n      color: #64748b;\n      line-height: 1.5;\n    }\n    code {\n      font-family: Menlo, Consolas, Monaco, monospace;\n      background-color: #f1f5f9;\n      padding: 2px 6px;\n      border-radius: 4px;\n      font-size: 12px;\n      color: #0f172a;\n    }\n    .ref-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 15px;\n      font-size: 12px;\n    }\n    .ref-table th, .ref-table td {\n      border: 1px solid #e2e8f0;\n      padding: 10px 12px;\n      text-align: left;\n    }\n    .ref-table th {\n      background-color: #f8fafc;\n      color: #475569;\n      font-weight: 700;\n      text-transform: uppercase;\n      font-size: 11px;\n      letter-spacing: 0.5px;\n    }\n    .ref-table tr:nth-child(even) {\n      background-color: #f8fafc;\n    }\n    .ref-link {\n      color: #4f46e5;\n      text-decoration: none;\n      font-weight: 600;\n    }\n    .ref-link:hover {\n      text-decoration: underline;\n    }\n    .footer {\n      background-color: #f8fafc;\n      color: #64748b;\n      padding: 30px;\n      text-align: center;\n      font-size: 12px;\n      border-top: 1px solid #e2e8f0;\n      line-height: 1.5;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"top-gradient-bar\"></div>\n    <div class=\"header\">\n      <h1>Daily Developer Briefing</h1>\n      <p>Self-Hosted AI Tech Analyst & Executive Briefing Summary</p>\n      <div class=\"date-badge\">${date}</div>\n    </div>\n    <div class=\"content\">\n      ${combinedFragments}\n    </div>\n    <div class=\"footer\">\n      Generated automatically via Docker, pgvector, Ollama & n8n.<br>\n      Zero recurring SaaS charges. Keep building.\n    </div>\n  </div>\n</body>\n</html>`;\n\nreturn {\n  html: finalHtml,\n  date: date,\n  smtp_sender: smtp_sender,\n  smtp_receiver: smtp_receiver\n};"
+      },
+      "id": "merge-id",
+      "name": "Merge briefings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        400
       ]
     },
     {
@@ -135,8 +322,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
-        1740,
-        180
+        1180,
+        400
       ]
     }
   ],
@@ -145,87 +332,237 @@
       "main": [
         [
           {
-            "node": "Trigger Ingestion",
+            "node": "Ingest YouTube",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ingest Hacker News",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ingest Reddit",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ingest GitHub",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ingest arXiv",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ingest Blogs",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Trigger Ingestion": {
+    "Ingest YouTube": {
       "main": [
         [
           {
-            "node": "Deduplicate & Rank",
+            "node": "Compile YouTube Briefing",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Deduplicate & Rank": {
+    "Ingest Hacker News": {
       "main": [
         [
           {
-            "node": "Wait 10s",
+            "node": "Compile HN Briefing",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Wait 10s": {
+    "Ingest Reddit": {
       "main": [
         [
           {
-            "node": "Check Status",
+            "node": "Compile Reddit Briefing",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Status": {
+    "Ingest GitHub": {
       "main": [
         [
           {
-            "node": "Is Complete?",
+            "node": "Compile GitHub Briefing",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Is Complete?": {
+    "Ingest arXiv": {
       "main": [
         [
           {
-            "node": "Compile Briefing",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Wait 10s",
+            "node": "Compile arXiv Briefing",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Compile Briefing": {
+    "Ingest Blogs": {
       "main": [
         [
           {
-            "node": "Parse & Style HTML",
+            "node": "Compile Blogs Briefing",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse & Style HTML": {
+    "Compile YouTube Briefing": {
+      "main": [
+        [
+          {
+            "node": "Parse YouTube HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile HN Briefing": {
+      "main": [
+        [
+          {
+            "node": "Parse HN HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Reddit Briefing": {
+      "main": [
+        [
+          {
+            "node": "Parse Reddit HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile GitHub Briefing": {
+      "main": [
+        [
+          {
+            "node": "Parse GitHub HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile arXiv Briefing": {
+      "main": [
+        [
+          {
+            "node": "Parse arXiv HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Blogs Briefing": {
+      "main": [
+        [
+          {
+            "node": "Parse Blogs HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse YouTube HTML": {
+      "main": [
+        [
+          {
+            "node": "Merge briefings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse HN HTML": {
+      "main": [
+        [
+          {
+            "node": "Merge briefings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reddit HTML": {
+      "main": [
+        [
+          {
+            "node": "Merge briefings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse GitHub HTML": {
+      "main": [
+        [
+          {
+            "node": "Merge briefings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse arXiv HTML": {
+      "main": [
+        [
+          {
+            "node": "Merge briefings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Blogs HTML": {
+      "main": [
+        [
+          {
+            "node": "Merge briefings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge briefings": {
       "main": [
         [
           {

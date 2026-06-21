@@ -1,6 +1,9 @@
 import logging
 from datetime import datetime, date, timedelta
+from typing import Optional, List
+# pyrefly: ignore [missing-import]
 import httpx
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import Article, Briefing
@@ -12,22 +15,24 @@ class InsightsService:
         self.base_url = settings.OLLAMA_BASE_URL
         self.model = settings.OLLAMA_LLM_MODEL
 
-    def generate_daily_briefing(self, db: Session, target_date: date) -> tuple[Briefing, str]:
+    def generate_daily_briefing(self, db: Session, target_date: date, source: Optional[str] = None) -> tuple[Briefing, str, str]:
         """
-        Gathers YouTube videos from the last 24 hours, filters and groups them,
+        Gathers articles/videos from the last 24 hours, filters and groups them,
         calls Ollama to generate personalized insights, structures the markdown and HTML,
         and saves the briefing to the database.
         """
+        if not source:
+            source = "youtube"
+
         start_time = datetime.combine(target_date, datetime.min.time()) - timedelta(hours=2)
         end_time = datetime.combine(target_date, datetime.max.time()) + timedelta(hours=2)
 
-        # Get all non-duplicate ranked videos from today, sorted by published_at DESC (newest first)
+        # Get all non-duplicate articles from today, sorted by published_at DESC (newest first)
         articles = (
             db.query(Article)
             .filter(
                 Article.is_duplicate == False,
-                Article.overall_score.is_not(None),
-                Article.source_type == "youtube",
+                Article.source_type == source,
                 Article.created_at >= start_time,
                 Article.created_at <= end_time
             )
@@ -35,102 +40,143 @@ class InsightsService:
             .all()
         )
 
+        source_display = source.upper()
+
         if not articles:
-            logger.warning(f"No videos found to generate briefing for date {target_date}")
+            logger.warning(f"No articles found to generate briefing for date {target_date} from source {source}")
             empty_content = (
-                f"# Daily Developer Video Briefing\n"
+                f"# Daily Developer {source_display} Briefing\n"
                 f"*Date: {target_date}*\n\n"
-                f"No new developer videos were captured for today."
+                f"No new developer updates were captured for today."
             )
-            empty_html = self._compile_html(target_date, [], [], "", [])
+            empty_fragment = f'<p style="color:#64748b; font-style:italic; margin-bottom:20px;">No new developer updates from {source_display} were captured for today.</p>'
+            empty_html = self._compile_html(target_date, empty_fragment, source=source)
             
             # Save empty briefing
-            existing_briefing = db.query(Briefing).filter(Briefing.date == target_date).first()
+            existing_briefing = db.query(Briefing).filter(Briefing.date == target_date, Briefing.source_type == source).first()
             if existing_briefing:
                 existing_briefing.content = empty_content
                 db.commit()
-                return existing_briefing, empty_html
+                return existing_briefing, empty_html, empty_fragment
             else:
-                briefing = Briefing(date=target_date, content=empty_content)
+                briefing = Briefing(date=target_date, source_type=source, content=empty_content)
                 db.add(briefing)
                 db.commit()
-                return briefing, empty_html
+                return briefing, empty_html, empty_fragment
 
-        # Must Watch: Top 2 videos
+        # Must Watch: Top 2 videos/articles
         must_watch = articles[:2]
         must_watch_ids = {a.id for a in must_watch}
 
-        # Rest of the videos
-        other_videos = [a for a in articles if a.id not in must_watch_ids][:6]
+        # Rest of the items
+        other_items = [a for a in articles if a.id not in must_watch_ids][:6]
 
-        # Call LLM to generate Personalized Insights based on top video descriptions
-        insights_text = self._generate_personalized_insights_llm(must_watch, other_videos)
+        # Call LLM to generate Personalized Insights based on top item descriptions
+        insights_text = self._generate_personalized_insights_llm(must_watch, other_items, source=source)
 
         # Assemble Markdown Briefing
         markdown = self._compile_markdown(
             target_date=target_date,
             must_watch=must_watch,
-            other_videos=other_videos,
+            other_videos=other_items,
             insights=insights_text,
-            all_articles=articles
+            all_articles=articles,
+            source=source
         )
 
         # Parse insights markdown to HTML
         insights_html = self._markdown_to_html(insights_text)
 
+        # Compile HTML Fragment
+        fragment_html = self._compile_html_fragment(
+            target_date=target_date,
+            must_watch=must_watch,
+            other_videos=other_items,
+            insights_html=insights_html,
+            all_articles=articles,
+            source=source
+        )
+
         # Assemble HTML Briefing
         html = self._compile_html(
             target_date=target_date,
-            must_watch=must_watch,
-            other_videos=other_videos,
-            insights_html=insights_html,
-            all_articles=articles
+            fragment_html=fragment_html,
+            source=source
         )
 
-        # Save to DB (override if briefing already exists for this date)
-        existing_briefing = db.query(Briefing).filter(Briefing.date == target_date).first()
+        # Save to DB (override if briefing already exists for this date/source)
+        existing_briefing = db.query(Briefing).filter(Briefing.date == target_date, Briefing.source_type == source).first()
         if existing_briefing:
             existing_briefing.content = markdown
             db.commit()
-            return existing_briefing, html
+            return existing_briefing, html, fragment_html
         else:
-            briefing = Briefing(date=target_date, content=markdown)
+            briefing = Briefing(date=target_date, source_type=source, content=markdown)
             db.add(briefing)
             db.commit()
-            return briefing, html
+            return briefing, html, fragment_html
 
-    def _generate_personalized_insights_llm(self, must_watch: list[Article], other_videos: list[Article]) -> str:
+    def _generate_personalized_insights_llm(self, must_watch: list[Article], other_videos: list[Article], source: str = "youtube") -> str:
         """
-        Invokes Ollama to synthesize the daily video summaries and write custom developer notes.
+        Invokes Ollama to synthesize the daily summaries and write custom developer notes.
         """
+        source_label = "items"
+        source_category = "resources"
+        recommend_verb = "reading"
+        
+        if source == "youtube":
+            source_label = "videos"
+            source_category = "developer channels"
+            recommend_verb = "watching"
+        elif source == "hn":
+            source_label = "stories"
+            source_category = "Hacker News"
+            recommend_verb = "reading"
+        elif source == "reddit":
+            source_label = "posts"
+            source_category = "Reddit"
+            recommend_verb = "reading"
+        elif source == "github":
+            source_label = "repositories"
+            source_category = "GitHub"
+            recommend_verb = "exploring"
+        elif source == "arxiv":
+            source_label = "papers"
+            source_category = "arXiv"
+            recommend_verb = "reading"
+        elif source == "blog":
+            source_label = "articles"
+            source_category = "tech blogs"
+            recommend_verb = "reading"
+
         context_lines = []
-        context_lines.append("### TOP MUST WATCH VIDEOS")
+        context_lines.append(f"### TOP MUST WATCH/READ {source_label.upper()}")
         for i, a in enumerate(must_watch, 1):
             context_lines.append(f"{i}. {a.title} by {a.author}\n   Summary: {a.summary or 'N/A'}")
         
         if other_videos:
-            context_lines.append("\n### OTHER RELEVANT RELEASES")
+            context_lines.append(f"\n### OTHER RELEVANT {source_label.upper()}")
             for a in other_videos:
                 context_lines.append(f"- {a.title} by {a.author}\n  Summary: {a.summary or 'N/A'}")
 
         top_developments_context = "\n".join(context_lines)
 
         system_prompt = (
-            "You are a Staff AI Architect and Tech Analyst. Your job is to synthesize today's major video releases "
-            "from top developer channels and provide actionable insights for an experienced software developer interested in "
+            f"You are a Staff AI Architect and Tech Analyst. Your job is to synthesize today's major {source_label} "
+            f"from {source_category} and provide actionable insights for an experienced software developer interested in "
             "Backend Engineering, System Design, LLMs, AI Agents, MCP (Model Context Protocol), RAG, and Developer Tools.\n\n"
             "Format your response as a professional analysis with the following headings:\n"
             "#### Key Takeaways & Trends\n"
-            "<Explain the core trends or announcements shown in today's videos>\n\n"
+            f"<Explain the core trends or announcements shown in today's {source_label}>\n\n"
             "#### Impact on AI & Backend Engineers\n"
-            "<How these video concepts/launches affect design choices, development workflows, or architectural patterns>\n\n"
+            f"<How these concepts/launches affect design choices, development workflows, or architectural patterns>\n\n"
             "#### Watch Recommendation\n"
-            "<Recommend specifically which 1-2 videos are worth watching immediately and which ones to skip. Be direct.>\n\n"
+            f"<Recommend specifically which 1-2 {source_label} are worth {recommend_verb} immediately and which ones to skip. Be direct.>\n\n"
             "Keep your output clean, brief, and in markdown format."
         )
 
         user_prompt = (
-            f"Here are the details of developer videos uploaded in the last 24 hours:\n\n"
+            f"Here are the details of developer {source_label} uploaded in the last 24 hours:\n\n"
             f"{top_developments_context}\n\n"
             f"Please generate the personalized insights analysis."
         )
@@ -147,7 +193,6 @@ class InsightsService:
         }
 
         try:
-            # We only generate insights if the user has LLM enabled or has running models
             with httpx.Client(timeout=60.0) as client:
                 response = client.post(url, json=payload)
                 response.raise_for_status()
@@ -157,11 +202,11 @@ class InsightsService:
             logger.error(f"Error compiling LLM insights: {str(e)}")
             return (
                 "#### Key Takeaways & Trends\n"
-                "New technical tutorials and tooling reviews were published today by leading developer channels.\n\n"
+                f"New technical updates and tutorials were published today on {source_category}.\n\n"
                 "#### Impact on AI & Backend Engineers\n"
-                "New APIs and updates in agent capabilities make standard implementations faster to ship.\n\n"
+                "New capabilities make standard implementations faster to ship.\n\n"
                 "#### Watch Recommendation\n"
-                "Inspect the video catalog below for channel uploads matching your active research areas."
+                f"Inspect the catalog below for uploads matching your active research areas."
             )
 
     def _markdown_to_html(self, md_text: str) -> str:
@@ -220,18 +265,45 @@ class InsightsService:
         html = '\n'.join(paragraphs)
         return html
 
-    def _compile_html(self, target_date: date, must_watch: list[Article], other_videos: list[Article], 
-                      insights_html: str, all_articles: list[Article]) -> str:
+    def _compile_html_fragment(self, target_date: date, must_watch: list[Article], other_videos: list[Article], 
+                               insights_html: str, all_articles: list[Article], source: str = "youtube") -> str:
         """
-        Assembles a premium, highly-styled, responsive light-mode HTML template for the email briefing.
+        Assembles a styled HTML block for a specific source to be embedded in the main briefing.
         """
-        formatted_date = target_date.strftime('%B %d, %Y')
+        source_label = "Items"
+        source_singular = "Item"
+        action_label = "Read"
         
+        if source == "youtube":
+            source_label = "YouTube Videos"
+            source_singular = "Video"
+            action_label = "Watch Video"
+        elif source == "hn":
+            source_label = "Hacker News Stories"
+            source_singular = "Story"
+            action_label = "Read Story"
+        elif source == "reddit":
+            source_label = "Reddit Posts"
+            source_singular = "Post"
+            action_label = "Read Post"
+        elif source == "github":
+            source_label = "GitHub Repositories"
+            source_singular = "Repo"
+            action_label = "View Repo"
+        elif source == "arxiv":
+            source_label = "Research Papers"
+            source_singular = "Paper"
+            action_label = "Read Paper"
+        elif source == "blog":
+            source_label = "Blog Articles"
+            source_singular = "Article"
+            action_label = "Read Article"
+
         # Build Executive Synthesis card
         if insights_html:
             insights_html_block = f"""
             <div class="insights-card">
-              <div class="insights-title">⭐ Executive AI Synthesis</div>
+              <div class="insights-title">⭐ Executive AI Synthesis ({source_label})</div>
               {insights_html}
             </div>
             """
@@ -248,14 +320,14 @@ class InsightsService:
                   <h3><a href="{a.url}" target="_blank">{a.title}</a></h3>
                   <div class="meta-row">
                     <span class="channel-badge">{a.author}</span>
-                    <a class="btn-watch" href="{a.url}" target="_blank">Watch Video ➔</a>
+                    <a class="btn-watch" href="{a.url}" target="_blank">{action_label} ➔</a>
                   </div>
                   <blockquote>{summary}</blockquote>
                 </div>
                 """)
             must_watch_html = "\n".join(must_watch_html_list)
         else:
-            must_watch_html = '<p style="color:#64748b; font-style:italic; margin-bottom:20px;">No high-priority videos cataloged today.</p>'
+            must_watch_html = f'<p style="color:#64748b; font-style:italic; margin-bottom:20px;">No high-priority {source_label.lower()} cataloged today.</p>'
 
         # Build Other Videos list
         other_videos_html_list = []
@@ -271,7 +343,7 @@ class InsightsService:
                 """)
             other_videos_html = "\n".join(other_videos_html_list)
         else:
-            other_videos_html = '<p style="color:#64748b; font-style:italic; padding:10px 0;">No other video uploads captured today.</p>'
+            other_videos_html = f'<p style="color:#64748b; font-style:italic; padding:10px 0;">No other {source_label.lower()} uploads captured today.</p>'
 
         # Build Reference Catalogue rows
         reference_rows_list = []
@@ -280,18 +352,61 @@ class InsightsService:
             <tr>
               <td><code>{a.author}</code></td>
               <td>{a.title}</td>
-              <td><a class="ref-link" href="{a.url}" target="_blank">YouTube Link</a></td>
+              <td><a class="ref-link" href="{a.url}" target="_blank">{source_singular} Link</a></td>
             </tr>
             """)
-        reference_rows = "\n".join(reference_rows_list) if reference_rows_list else '<tr><td colspan="3" style="text-align:center; color:#64748b;">No reference videos available today.</td></tr>'
+        reference_rows = "\n".join(reference_rows_list) if reference_rows_list else f'<tr><td colspan="3" style="text-align:center; color:#64748b;">No reference {source_label.lower()} available today.</td></tr>'
 
+        fragment = f"""
+        <div class="source-section" style="margin-top: 40px; margin-bottom: 40px;">
+          <h2 style="font-size: 20px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; margin-bottom: 20px; text-transform: uppercase; color: #1e1b4b; letter-spacing: 0.5px;">🌐 {source_label}</h2>
+          
+          {insights_html_block}
+          
+          <div class="section-header" style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 12px; margin-top: 20px;">
+            🔥 Must Watch / Read
+          </div>
+          {must_watch_html}
+          
+          <div class="section-header" style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 12px; margin-top: 20px;">
+            🎥 More Releases & Updates
+          </div>
+          <ul class="video-list">
+            {other_videos_html}
+          </ul>
+          
+          <div class="section-header" style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 12px; margin-top: 20px;">
+            🔗 Reference Catalogue
+          </div>
+          <table class="ref-table">
+            <thead>
+              <tr>
+                <th style="width: 25%;">Author/Source</th>
+                <th>Title</th>
+                <th style="width: 15%;">Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reference_rows}
+            </tbody>
+          </table>
+        </div>
+        """
+        return fragment
+
+    def _compile_html(self, target_date: date, fragment_html: str, source: str = "youtube") -> str:
+        """
+        Assembles a premium, highly-styled, responsive light-mode HTML template for the email briefing.
+        """
+        formatted_date = target_date.strftime('%B %d, %Y')
+        
         # Premium HTML Template
         email_template = f"""<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Developer Video Briefing</title>
+  <title>Daily Developer Briefing</title>
   <style>
     body {{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -555,39 +670,11 @@ class InsightsService:
     <div class="top-gradient-bar"></div>
     <div class="header">
       <h1>Daily Developer Briefing</h1>
-      <p>Self-Hosted AI Tech Analyst & Executive Video Summary</p>
+      <p>Self-Hosted AI Tech Analyst & Executive Briefing Summary</p>
       <div class="date-badge">{formatted_date}</div>
     </div>
     <div class="content">
-      {insights_html_block}
-      
-      <div class="section-header">
-        🔥 Must Watch Videos
-      </div>
-      {must_watch_html}
-      
-      <div class="section-header">
-        🎥 More Video Releases
-      </div>
-      <ul class="video-list">
-        {other_videos_html}
-      </ul>
-      
-      <div class="section-header">
-        🔗 Reference Catalogue
-      </div>
-      <table class="ref-table">
-        <thead>
-          <tr>
-            <th>Channel</th>
-            <th>Video Title</th>
-            <th>Link</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reference_rows}
-        </tbody>
-      </table>
+      {fragment_html}
     </div>
     <div class="footer">
       Generated automatically via Docker, pgvector, Ollama & n8n.<br>
@@ -599,38 +686,60 @@ class InsightsService:
         return email_template
 
     def _compile_markdown(self, target_date: date, must_watch: list[Article], other_videos: list[Article], 
-                          insights: str, all_articles: list[Article]) -> str:
+                          insights: str, all_articles: list[Article], source: str = "youtube") -> str:
         """
         Combines sections into a single standard Markdown document.
         """
+        source_label = "Items"
+        source_singular = "Item"
+        
+        if source == "youtube":
+            source_label = "Videos"
+            source_singular = "Video"
+        elif source == "hn":
+            source_label = "Stories"
+            source_singular = "Story"
+        elif source == "reddit":
+            source_label = "Posts"
+            source_singular = "Post"
+        elif source == "github":
+            source_label = "Repositories"
+            source_singular = "Repository"
+        elif source == "arxiv":
+            source_label = "Papers"
+            source_singular = "Paper"
+        elif source == "blog":
+            source_label = "Articles"
+            source_singular = "Article"
+
         md = []
-        md.append(f"# Daily Developer Video Briefing")
+        md.append(f"# Daily Developer {source_label} Briefing")
         md.append(f"**Date:** {target_date.strftime('%B %d, %Y')}")
         md.append("")
         md.append("---")
         md.append("")
 
-        # Section 1: Must Watch
-        md.append("## 🔥 Must Watch")
+        # Section 1: Must Watch/Read
+        md.append(f"## 🔥 Must Watch / Read")
         if must_watch:
             for a in must_watch:
                 md.append(f"### [{a.title}]({a.url})")
-                md.append(f"**Channel:** `{a.author}` | **Watch Link:** [YouTube URL]({a.url})")
+                md.append(f"**Author/Source:** `{a.author}` | **Link:** [View Resource]({a.url})")
                 md.append(f"> {a.summary or 'No summary available.'}")
                 md.append("")
         else:
-            md.append("*No high-priority videos cataloged today.*")
+            md.append(f"*No high-priority {source_label.lower()} cataloged today.*")
             md.append("")
 
-        # Section 2: Other Videos
-        md.append("## 🎥 More Video Releases")
+        # Section 2: Other Items
+        md.append(f"## 🎥 More Releases & Updates")
         if other_videos:
             for a in other_videos:
                 md.append(f"- **[{a.title}]({a.url})** - `{a.author}`")
                 md.append(f"  *Description: {a.summary or 'No description available'}*")
             md.append("")
         else:
-            md.append("*No other video uploads captured today.*")
+            md.append(f"*No other {source_label.lower()} uploads captured today.*")
             md.append("")
 
         # Section 3: Personalized Insights
@@ -639,11 +748,11 @@ class InsightsService:
         md.append("")
 
         # Section 4: References
-        md.append("## 🔗 Sources & Videos Reference")
-        md.append("| Channel | Video Title | Link |")
+        md.append(f"## 🔗 Sources & {source_label} Reference")
+        md.append("| Source | Title | Link |")
         md.append("| --- | --- | --- |")
         for a in all_articles:
-            md.append(f"| `{a.author}` | {a.title[:60]}... | [YouTube Link]({a.url}) |")
+            md.append(f"| `{a.author}` | {a.title[:60]}... | [Link]({a.url}) |")
         md.append("")
 
         return "\n".join(md)

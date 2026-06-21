@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 # pyrefly: ignore [missing-import]
-from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Text, JSON, Date
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Text, JSON, Date, UniqueConstraint
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 # pyrefly: ignore [missing-import]
@@ -56,6 +56,11 @@ class Briefing(Base):
     __tablename__ = "briefings"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    date = Column(Date, unique=True, index=True, nullable=False)
+    date = Column(Date, index=True, nullable=False)
+    source_type = Column(String, index=True, nullable=True)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('date', 'source_type', name='uq_briefings_date_source'),
+    )

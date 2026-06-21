@@ -81,6 +81,7 @@ def trigger_clear_db(db: Session = Depends(get_db)):
     """
     Truncates the articles table to clear historical data.
     """
+    # pyrefly: ignore [missing-import]
     from sqlalchemy import text
     try:
         db.execute(text("TRUNCATE articles CASCADE;"))
@@ -91,15 +92,36 @@ def trigger_clear_db(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Database truncation failed: {str(e)}")
 
 @app.post("/ingest", response_model=IngestResponse)
-def trigger_ingest(db: Session = Depends(get_db)):
+def trigger_ingest(
+    source: Optional[str] = Query(None, description="Specific source to ingest (e.g. 'youtube', 'hn', 'reddit', 'github', 'arxiv', 'blog')"),
+    db: Session = Depends(get_db)
+):
     """
-    Runs all platform scrapers and inserts newly found tech news into the database.
+    Runs platform scrapers and inserts newly found tech news into the database.
     """
     scraped_total = 0
     inserted_count = 0
     skipped_count = 0
 
     for scraper in SCRAPERS:
+        if source:
+            source_lower = source.lower()
+            name_map = {
+                "youtube": "youtube",
+                "hn": "hacker news",
+                "hackernews": "hacker news",
+                "reddit": "reddit",
+                "github": "github",
+                "arxiv": "arxiv",
+                "paper": "arxiv",
+                "research": "arxiv",
+                "blog": "blogs",
+                "blogs": "blogs"
+            }
+            mapped_target = name_map.get(source_lower, source_lower)
+            if scraper.name.lower() != mapped_target:
+                continue
+
         try:
             print(f"Starting ingestion from scraper: {scraper.name}")
             articles = scraper.scrape()
@@ -185,6 +207,7 @@ def get_process_status(db: Session = Depends(get_db)):
 @app.post("/generate-briefing")
 def trigger_generate_briefing(
     target_date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (defaults to current local date)"),
+    source: Optional[str] = Query(None, description="Specific source to compile briefing for (e.g. 'youtube', 'hn', 'reddit', 'github', 'arxiv', 'blog')"),
     db: Session = Depends(get_db)
 ):
     """
@@ -200,7 +223,7 @@ def trigger_generate_briefing(
         parsed_date = datetime.utcnow().date()
 
     try:
-        briefing, html_content = insights_service.generate_daily_briefing(db, parsed_date)
+        briefing, html_content, fragment_content = insights_service.generate_daily_briefing(db, parsed_date, source=source)
         import os
         return {
             "status": "completed",
@@ -208,6 +231,7 @@ def trigger_generate_briefing(
             "date": briefing.date,
             "content": briefing.content,
             "html": html_content,
+            "fragment": fragment_content,
             "smtp_sender": os.getenv("SMTP_SENDER"),
             "smtp_receiver": os.getenv("SMTP_RECEIVER")
         }
