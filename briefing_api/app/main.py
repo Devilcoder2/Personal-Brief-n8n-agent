@@ -76,6 +76,20 @@ def trigger_init_db():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database initialization failed: {str(e)}")
 
+@app.post("/clear-db")
+def trigger_clear_db(db: Session = Depends(get_db)):
+    """
+    Truncates the articles table to clear historical data.
+    """
+    from sqlalchemy import text
+    try:
+        db.execute(text("TRUNCATE articles CASCADE;"))
+        db.commit()
+        return {"status": "success", "message": "Articles table truncated successfully."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database truncation failed: {str(e)}")
+
 @app.post("/ingest", response_model=IngestResponse)
 def trigger_ingest(db: Session = Depends(get_db)):
     """
@@ -186,13 +200,14 @@ def trigger_generate_briefing(
         parsed_date = datetime.utcnow().date()
 
     try:
-        briefing = insights_service.generate_daily_briefing(db, parsed_date)
+        briefing, html_content = insights_service.generate_daily_briefing(db, parsed_date)
         import os
         return {
             "status": "completed",
             "briefing_id": briefing.id,
             "date": briefing.date,
             "content": briefing.content,
+            "html": html_content,
             "smtp_sender": os.getenv("SMTP_SENDER"),
             "smtp_receiver": os.getenv("SMTP_RECEIVER")
         }
