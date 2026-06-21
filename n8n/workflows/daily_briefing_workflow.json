@@ -9,7 +9,7 @@
       "typeVersion": 1,
       "position": [
         100,
-        400
+        820
       ]
     },
     {
@@ -24,7 +24,7 @@
       "typeVersion": 4.2,
       "position": [
         300,
-        100
+        200
       ]
     },
     {
@@ -39,7 +39,7 @@
       "typeVersion": 4.2,
       "position": [
         300,
-        220
+        450
       ]
     },
     {
@@ -54,7 +54,7 @@
       "typeVersion": 4.2,
       "position": [
         300,
-        340
+        700
       ]
     },
     {
@@ -69,7 +69,7 @@
       "typeVersion": 4.2,
       "position": [
         300,
-        460
+        950
       ]
     },
     {
@@ -84,7 +84,7 @@
       "typeVersion": 4.2,
       "position": [
         300,
-        580
+        1200
       ]
     },
     {
@@ -99,7 +99,391 @@
       "typeVersion": 4.2,
       "position": [
         300,
+        1450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/rank?source=youtube",
+        "options": {}
+      },
+      "id": "rank-yt-id",
+      "name": "Rank YouTube",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/rank?source=hn",
+        "options": {}
+      },
+      "id": "rank-hn-id",
+      "name": "Rank Hacker News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/rank?source=reddit",
+        "options": {}
+      },
+      "id": "rank-rd-id",
+      "name": "Rank Reddit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
         700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/rank?source=github",
+        "options": {}
+      },
+      "id": "rank-gh-id",
+      "name": "Rank GitHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        950
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/rank?source=arxiv",
+        "options": {}
+      },
+      "id": "rank-ax-id",
+      "name": "Rank arXiv",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/rank?source=blog",
+        "options": {}
+      },
+      "id": "rank-bg-id",
+      "name": "Rank Blogs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1450
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-yt-id",
+      "name": "Wait YouTube",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-hn-id",
+      "name": "Wait Hacker News",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        660,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-rd-id",
+      "name": "Wait Reddit",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        660,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-gh-id",
+      "name": "Wait GitHub",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        660,
+        950
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-ax-id",
+      "name": "Wait arXiv",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        660,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-bg-id",
+      "name": "Wait Blogs",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        660,
+        1450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://briefing-api:8000/rank-status?source=youtube",
+        "options": {}
+      },
+      "id": "status-yt-id",
+      "name": "Status YouTube",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://briefing-api:8000/rank-status?source=hn",
+        "options": {}
+      },
+      "id": "status-hn-id",
+      "name": "Status Hacker News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://briefing-api:8000/rank-status?source=reddit",
+        "options": {}
+      },
+      "id": "status-rd-id",
+      "name": "Status Reddit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://briefing-api:8000/rank-status?source=github",
+        "options": {}
+      },
+      "id": "status-gh-id",
+      "name": "Status GitHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        950
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://briefing-api:8000/rank-status?source=arxiv",
+        "options": {}
+      },
+      "id": "status-ax-id",
+      "name": "Status arXiv",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://briefing-api:8000/rank-status?source=blog",
+        "options": {}
+      },
+      "id": "status-bg-id",
+      "name": "Status Blogs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        1450
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "is-comp-yt-id",
+      "name": "Is Complete YouTube?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "is-comp-hn-id",
+      "name": "Is Complete Hacker News?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "is-comp-rd-id",
+      "name": "Is Complete Reddit?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "is-comp-gh-id",
+      "name": "Is Complete GitHub?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        950
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "is-comp-ax-id",
+      "name": "Is Complete arXiv?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "is-comp-bg-id",
+      "name": "Is Complete Blogs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        1450
       ]
     },
     {
@@ -115,8 +499,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        520,
-        100
+        1200,
+        200
       ]
     },
     {
@@ -132,8 +516,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        520,
-        220
+        1200,
+        450
       ]
     },
     {
@@ -149,8 +533,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        520,
-        340
+        1200,
+        700
       ]
     },
     {
@@ -166,8 +550,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        520,
-        460
+        1200,
+        950
       ]
     },
     {
@@ -183,8 +567,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        520,
-        580
+        1200,
+        1200
       ]
     },
     {
@@ -200,8 +584,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        520,
-        700
+        1200,
+        1450
       ]
     },
     {
@@ -214,8 +598,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        740,
-        100
+        1400,
+        200
       ]
     },
     {
@@ -228,8 +612,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        740,
-        220
+        1400,
+        450
       ]
     },
     {
@@ -242,8 +626,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        740,
-        340
+        1400,
+        700
       ]
     },
     {
@@ -256,8 +640,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        740,
-        460
+        1400,
+        950
       ]
     },
     {
@@ -270,8 +654,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        740,
-        580
+        1400,
+        1200
       ]
     },
     {
@@ -284,29 +668,28 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        740,
-        700
+        1400,
+        1450
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const youtube = $items(\"Parse YouTube HTML\")[0]?.json?.fragment || \"\";\nconst hn = $items(\"Parse HN HTML\")[0]?.json?.fragment || \"\";\nconst reddit = $items(\"Parse Reddit HTML\")[0]?.json?.fragment || \"\";\nconst github = $items(\"Parse GitHub HTML\")[0]?.json?.fragment || \"\";\nconst arxiv = $items(\"Parse arXiv HTML\")[0]?.json?.fragment || \"\";\nconst blog = $items(\"Parse Blogs HTML\")[0]?.json?.fragment || \"\";\n\nconst date = $items(\"Parse YouTube HTML\")[0]?.json?.date || new Date().toISOString().split('T')[0];\nconst smtp_sender = $items(\"Parse YouTube HTML\")[0]?.json?.smtp_sender || \"\";\nconst smtp_receiver = $items(\"Parse YouTube HTML\")[0]?.json?.smtp_receiver || \"\";\n\nconst combinedFragments = [youtube, hn, reddit, github, arxiv, blog].filter(Boolean).join(\"\\n\");\n\nconst finalHtml = `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Daily Developer Briefing</title>\n  <style>\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n      line-height: 1.6;\n      color: #1e293b;\n      background-color: #f8fafc;\n      margin: 0;\n      padding: 40px 10px;\n      -webkit-font-smoothing: antialiased;\n    }\n    .wrapper {\n      max-width: 640px;\n      margin: 0 auto;\n      background-color: #ffffff;\n      border-radius: 16px;\n      overflow: hidden;\n      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);\n      border: 1px solid #e2e8f0;\n    }\n    .top-gradient-bar {\n      height: 6px;\n      background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);\n    }\n    .header {\n      padding: 40px 30px 25px 30px;\n      text-align: center;\n      background-color: #ffffff;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 24px;\n      font-weight: 800;\n      letter-spacing: 1.5px;\n      text-transform: uppercase;\n      color: #0f172a;\n    }\n    .header p {\n      margin: 8px 0 0 0;\n      font-size: 13.5px;\n      color: #64748b;\n      font-weight: 500;\n    }\n    .date-badge {\n      display: inline-block;\n      margin-top: 14px;\n      background-color: #e0e7ff;\n      color: #4338ca;\n      font-size: 12px;\n      font-weight: 700;\n      padding: 4px 14px;\n      border-radius: 100px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .content {\n      padding: 10px 30px 35px 30px;\n    }\n    .section-header {\n      color: #0f172a;\n      font-size: 16px;\n      font-weight: 800;\n      margin-top: 35px;\n      margin-bottom: 20px;\n      padding-bottom: 8px;\n      border-bottom: 2px solid #f1f5f9;\n      text-transform: uppercase;\n      letter-spacing: 1px;\n    }\n    .insights-card {\n      background-color: #faf5ff;\n      border-left: 4px solid #a855f7;\n      border-radius: 8px;\n      padding: 24px;\n      margin-bottom: 30px;\n    }\n    .insights-title {\n      font-size: 12px;\n      font-weight: 800;\n      color: #7e22ce;\n      text-transform: uppercase;\n      letter-spacing: 1px;\n      margin-bottom: 16px;\n    }\n    .insights-p {\n      font-size: 14px;\n      color: #3b0764;\n      margin-bottom: 14px;\n      line-height: 1.6;\n    }\n    .insights-sub-header {\n      font-size: 13.5px;
-      font-weight: 700;
-      color: #581c87;
-      margin-top: 20px;
-      margin-bottom: 8px;
+        "jsCode": "const youtube = $items(\"Parse YouTube HTML\")[0]?.json?.fragment || \"\";\nconst hn = $items(\"Parse HN HTML\")[0]?.json?.fragment || \"\";\nconst reddit = $items(\"Parse Reddit HTML\")[0]?.json?.fragment || \"\";\nconst github = $items(\"Parse GitHub HTML\")[0]?.json?.fragment || \"\";\nconst arxiv = $items(\"Parse arXiv HTML\")[0]?.json?.fragment || \"\";\nconst blog = $items(\"Parse Blogs HTML\")[0]?.json?.fragment || \"\";\n\nconst date = $items(\"Parse YouTube HTML\")[0]?.json?.date || new Date().toISOString().split('T')[0];\nconst smtp_sender = $items(\"Parse YouTube HTML\")[0]?.json?.smtp_sender || \"\";\nconst smtp_receiver = $items(\"Parse YouTube HTML\")[0]?.json?.smtp_receiver || \"\";\n\nconst combinedFragments = [youtube, hn, reddit, github, arxiv, blog].filter(Boolean).join(\"\\n\");\n\nconst finalHtml = `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Daily Developer Briefing</title>\n  <style>\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n      line-height: 1.6;\n      color: #1e293b;\n      background-color: #f8fafc;\n      margin: 0;\n      padding: 40px 10px;\n      -webkit-font-smoothing: antialiased;\n    }\n    .wrapper {\n      max-width: 640px;\n      margin: 0 auto;\n      background-color: #ffffff;\n      border-radius: 16px;\n      overflow: hidden;\n      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);\n      border: 1px solid #e2e8f0;\n    }\n    .top-gradient-bar {\n      height: 6px;\n      background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);\n    }\n    .header {\n      padding: 40px 30px 25px 30px;\n      text-align: center;\n      background-color: #ffffff;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 24px;\n      font-weight: 800;\n      letter-spacing: 1.5px;\n      text-transform: uppercase;\n      color: #0f172a;\n    }\n    .header p {\n      margin: 8px 0 0 0;\n      font-size: 13.5px;\n      color: #64748b;\n      font-weight: 500;\n    }\n    .date-badge {\n      display: inline-block;\n      margin-top: 14px;\n      background-color: #e0e7ff;\n      color: #4338ca;\n      font-size: 12px;\n      font-weight: 700;\n      padding: 4px 14px;\n      border-radius: 100px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .content {\n      padding: 10px 30px 35px 30px;\n    }\n    .section-header {\n      color: #0f172a;\n      font-size: 16px;\n      font-weight: 800;\n      margin-top: 35px;\n      margin-bottom: 20px;\n      padding-bottom: 8px;\n      border-bottom: 2px solid #f1f5f9;\n      text-transform: uppercase;\n      letter-spacing: 1px;\n    }\n    .insights-card {\n      background-color: #faf5ff;\n      border-left: 4px solid #a855f7;\n      border-radius: 8px;\n      padding: 24px;\n      margin-bottom: 30px;\n    }\n    .insights-title {\n      font-size: 12px;
+      font-weight: 800;
+      color: #7e22ce;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }\n    .insights-list {\n      margin: 8px 0 16px 0;\n      padding-left: 20px;\n    }\n    .insights-list-item {\n      font-size: 14px;\n      color: #3b0764;\n      margin-bottom: 6px;\n      line-height: 1.55;\n    }\n    .must-watch-card {\n      background-color: #ffffff;\n      border: 1px solid #e2e8f0;\n      border-left: 4px solid #f59e0b;\n      border-radius: 10px;\n      padding: 24px;\n      margin-bottom: 20px;\n      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);\n    }\n    .must-watch-card h3 {\n      margin: 0 0 12px 0;\n      font-size: 17px;\n      font-weight: 700;\n      line-height: 1.45;\n    }\n    .must-watch-card h3 a {\n      color: #0f172a;\n      text-decoration: none;\n    }\n    .must-watch-card h3 a:hover {\n      color: #4f46e5;\n    }\n    .meta-row {\n      margin-bottom: 16px;\n    }\n    .channel-badge {\n      display: inline-block;\n      background-color: #fef3c7;\n      color: #d97706;\n      font-size: 11px;\n      font-weight: 700;\n      padding: 3px 10px;\n      border-radius: 6px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      margin-right: 12px;\n    }\n    .btn-watch {\n      display: inline-block;\n      color: #4f46e5;\n      text-decoration: none;\n      font-weight: 700;\n      font-size: 13px;\n    }\n    .btn-watch:hover {\n      text-decoration: underline;\n    }\n    .must-watch-card blockquote {\n      margin: 16px 0 0 0;\n      padding-left: 14px;\n      border-left: 2px solid #e2e8f0;\n      font-style: normal;\n      font-size: 13.5px;\n      color: #475569;\n      line-height: 1.6;\n    }\n    .video-list {\n      list-style: none;\n      padding: 0;\n      margin: 0;\n    }\n    .video-list-item {\n      border-bottom: 1px solid #f1f5f9;\n      padding: 16px 0;\n    }\n    .video-list-item:last-child {\n      border-bottom: none;\n      padding-bottom: 0;\n    }\n    .video-list-item:first-child {\n      padding-top: 0;\n    }\n    .video-title-link {\n      color: #0f172a;\n      font-weight: 600;\n      font-size: 15px;\n      text-decoration: none;\n      line-height: 1.4;\n    }\n    .video-title-link:hover {\n      color: #4f46e5;\n    }\n    .channel-badge-small {\n      display: inline-block;\n      background-color: #f1f5f9;\n      color: #475569;\n      font-size: 10px;\n      font-weight: 700;\n      padding: 2px 8px;\n      border-radius: 4px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      margin-left: 8px;\n      vertical-align: middle;\n    }\n    .video-list-item .desc {\n      margin: 6px 0 0 0;\n      font-size: 13.5px;\n      color: #64748b;\n      line-height: 1.5;\n    }\n    code {\n      font-family: Menlo, Consolas, Monaco, monospace;\n      background-color: #f1f5f9;\n      padding: 2px 6px;\n      border-radius: 4px;\n      font-size: 12px;\n      color: #0f172a;\n    }\n    .ref-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 15px;\n      font-size: 12px;\n    }\n    .ref-table th, .ref-table td {\n      border: 1px solid #e2e8f0;\n      padding: 10px 12px;\n      text-align: left;\n    }\n    .ref-table th {\n      background-color: #f8fafc;\n      color: #475569;\n      font-weight: 700;\n      text-transform: uppercase;\n      font-size: 11px;\n      letter-spacing: 0.5px;\n    }\n    .ref-table tr:nth-child(even) {\n      background-color: #f8fafc;\n    }\n    .ref-link {\n      color: #4f46e5;\n      text-decoration: none;\n      font-weight: 600;\n    }\n    .ref-link:hover {\n      text-decoration: underline;\n    }\n    .footer {\n      background-color: #f8fafc;\n      color: #64748b;\n      padding: 30px;\n      text-align: center;\n      font-size: 12px;\n      border-top: 1px solid #e2e8f0;\n      line-height: 1.5;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"top-gradient-bar\"></div>\n    <div class=\"header\">\n      <h1>Daily Developer Briefing</h1>\n      <p>Self-Hosted AI Tech Analyst & Executive Briefing Summary</p>\n      <div class=\"date-badge\">${date}</div>\n    </div>\n    <div class=\"content\">\n      ${combinedFragments}\n    </div>\n    <div class=\"footer\">\n      Generated automatically via Docker, pgvector, Ollama & n8n.<br>\n      Zero recurring SaaS charges. Keep building.\n    </div>\n  </div>\n</body>\n</html>`;\n\nreturn {\n  html: finalHtml,\n  date: date,\n  smtp_sender: smtp_sender,\n  smtp_receiver: smtp_receiver\n};"
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }\n    .insights-p {\n      font-size: 14px;\n      color: #3b0764;\n      margin-bottom: 14px;\n      line-height: 1.6;\n    }\n    .insights-sub-header {\n      font-size: 13.5px;\n      font-weight: 700;\n      color: #581c87;\n      margin-top: 20px;\n      margin-bottom: 8px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .insights-list {\n      margin: 8px 0 16px 0;\n      padding-left: 20px;\n    }\n    .insights-list-item {\n      font-size: 14px;\n      color: #3b0764;\n      margin-bottom: 6px;\n      line-height: 1.55;\n    }\n    .must-watch-card {\n      background-color: #ffffff;\n      border: 1px solid #e2e8f0;\n      border-left: 4px solid #f59e0b;\n      border-radius: 10px;\n      padding: 24px;\n      margin-bottom: 20px;\n      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);\n    }\n    .must-watch-card h3 {\n      margin: 0 0 12px 0;\n      font-size: 17px;\n      font-weight: 700;\n      line-height: 1.45;\n    }\n    .must-watch-card h3 a {\n      color: #0f172a;\n      text-decoration: none;\n    }\n    .must-watch-card h3 a:hover {\n      color: #4f46e5;\n    }\n    .meta-row {\n      margin-bottom: 16px;\n    }\n    .channel-badge {\n      display: inline-block;\n      background-color: #fef3c7;\n      color: #d97706;\n      font-size: 11px;\n      font-weight: 700;\n      padding: 3px 10px;\n      border-radius: 6px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      margin-right: 12px;\n    }\n    .btn-watch {\n      display: inline-block;\n      color: #4f46e5;\n      text-decoration: none;\n      font-weight: 700;\n      font-size: 13px;\n    }\n    .btn-watch:hover {\n      text-decoration: underline;\n    }\n    .must-watch-card blockquote {\n      margin: 16px 0 0 0;\n      padding-left: 14px;\n      border-left: 2px solid #e2e8f0;\n      font-style: normal;\n      font-size: 13.5px;\n      color: #475569;\n      line-height: 1.6;\n    }\n    .video-list {\n      list-style: none;\n      padding: 0;\n      margin: 0;\n    }\n    .video-list-item {\n      border-bottom: 1px solid #f1f5f9;\n      padding: 16px 0;\n    }\n    .video-list-item:last-child {\n      border-bottom: none;\n      padding-bottom: 0;\n    }\n    .video-list-item:first-child {\n      padding-top: 0;\n    }\n    .video-title-link {\n      color: #0f172a;\n      font-weight: 600;\n      font-size: 15px;\n      text-decoration: none;\n      line-height: 1.4;\n    }\n    .video-title-link:hover {\n      color: #4f46e5;\n    }\n    .channel-badge-small {\n      display: inline-block;\n      background-color: #f1f5f9;\n      color: #475569;\n      font-size: 10px;\n      font-weight: 700;\n      padding: 2px 8px;\n      border-radius: 4px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      margin-left: 8px;\n      vertical-align: middle;\n    }\n    .video-list-item .desc {\n      margin: 6px 0 0 0;\n      font-size: 13.5px;\n      color: #64748b;\n      line-height: 1.5;\n    }\n    code {\n      font-family: Menlo, Consolas, Monaco, monospace;\n      background-color: #f1f5f9;\n      padding: 2px 6px;\n      border-radius: 4px;\n      font-size: 12px;\n      color: #0f172a;\n    }\n    .ref-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 15px;\n      font-size: 12px;\n    }\n    .ref-table th, .ref-table td {\n      border: 1px solid #e2e8f0;\n      padding: 10px 12px;\n      text-align: left;\n    }\n    .ref-table th {\n      background-color: #f8fafc;\n      color: #475569;\n      font-weight: 700;\n      text-transform: uppercase;\n      font-size: 11px;\n      letter-spacing: 0.5px;\n    }\n    .ref-table tr:nth-child(even) {\n      background-color: #f8fafc;\n    }\n    .ref-link {\n      color: #4f46e5;\n      text-decoration: none;\n      font-weight: 600;\n    }\n    .ref-link:hover {\n      text-decoration: underline;\n    }\n    .footer {\n      background-color: #f8fafc;\n      color: #64748b;\n      padding: 30px;\n      text-align: center;\n      font-size: 12px;\n      border-top: 1px solid #e2e8f0;\n      line-height: 1.5;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"top-gradient-bar\"></div>\n    <div class=\"header\">\n      <h1>Daily Developer Briefing</h1>\n      <p>Self-Hosted AI Tech Analyst & Executive Briefing Summary</p>\n      <div class=\"date-badge\">${date}</div>\n    </div>\n    <div class=\"content\">\n      ${combinedFragments}\n    </div>\n    <div class=\"footer\">\n      Generated automatically via Docker, pgvector, Ollama & n8n.<br>\n      Zero recurring SaaS charges. Keep building.\n    </div>\n  </div>\n</body>\n</html>`;\n\nreturn {\n  html: finalHtml,\n  date: date,\n  smtp_sender: smtp_sender,\n  smtp_receiver: smtp_receiver\n};"
       },
       "id": "merge-id",
       "name": "Merge briefings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        980,
-        400
+        1620,
+        820
       ]
     },
     {
@@ -322,8 +705,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
-        1180,
-        400
+        1820,
+        820
       ]
     }
   ],
@@ -368,7 +751,7 @@
       "main": [
         [
           {
-            "node": "Compile YouTube Briefing",
+            "node": "Rank YouTube",
             "type": "main",
             "index": 0
           }
@@ -379,7 +762,7 @@
       "main": [
         [
           {
-            "node": "Compile HN Briefing",
+            "node": "Rank Hacker News",
             "type": "main",
             "index": 0
           }
@@ -390,7 +773,7 @@
       "main": [
         [
           {
-            "node": "Compile Reddit Briefing",
+            "node": "Rank Reddit",
             "type": "main",
             "index": 0
           }
@@ -401,7 +784,7 @@
       "main": [
         [
           {
-            "node": "Compile GitHub Briefing",
+            "node": "Rank GitHub",
             "type": "main",
             "index": 0
           }
@@ -412,7 +795,7 @@
       "main": [
         [
           {
-            "node": "Compile arXiv Briefing",
+            "node": "Rank arXiv",
             "type": "main",
             "index": 0
           }
@@ -423,7 +806,313 @@
       "main": [
         [
           {
+            "node": "Rank Blogs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank YouTube": {
+      "main": [
+        [
+          {
+            "node": "Wait YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Hacker News": {
+      "main": [
+        [
+          {
+            "node": "Wait Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Reddit": {
+      "main": [
+        [
+          {
+            "node": "Wait Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank GitHub": {
+      "main": [
+        [
+          {
+            "node": "Wait GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank arXiv": {
+      "main": [
+        [
+          {
+            "node": "Wait arXiv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Blogs": {
+      "main": [
+        [
+          {
+            "node": "Wait Blogs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait YouTube": {
+      "main": [
+        [
+          {
+            "node": "Status YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Hacker News": {
+      "main": [
+        [
+          {
+            "node": "Status Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Reddit": {
+      "main": [
+        [
+          {
+            "node": "Status Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait GitHub": {
+      "main": [
+        [
+          {
+            "node": "Status GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait arXiv": {
+      "main": [
+        [
+          {
+            "node": "Status arXiv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Blogs": {
+      "main": [
+        [
+          {
+            "node": "Status Blogs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status YouTube": {
+      "main": [
+        [
+          {
+            "node": "Is Complete YouTube?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status Hacker News": {
+      "main": [
+        [
+          {
+            "node": "Is Complete Hacker News?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status Reddit": {
+      "main": [
+        [
+          {
+            "node": "Is Complete Reddit?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status GitHub": {
+      "main": [
+        [
+          {
+            "node": "Is Complete GitHub?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status arXiv": {
+      "main": [
+        [
+          {
+            "node": "Is Complete arXiv?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status Blogs": {
+      "main": [
+        [
+          {
+            "node": "Is Complete Blogs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete YouTube?": {
+      "main": [
+        [
+          {
+            "node": "Compile YouTube Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete Hacker News?": {
+      "main": [
+        [
+          {
+            "node": "Compile HN Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete Reddit?": {
+      "main": [
+        [
+          {
+            "node": "Compile Reddit Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete GitHub?": {
+      "main": [
+        [
+          {
+            "node": "Compile GitHub Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete arXiv?": {
+      "main": [
+        [
+          {
+            "node": "Compile arXiv Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait arXiv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete Blogs?": {
+      "main": [
+        [
+          {
             "node": "Compile Blogs Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Blogs",
             "type": "main",
             "index": 0
           }

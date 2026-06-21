@@ -17,30 +17,24 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Global processing state flag
-is_processing = False
+# Dictionary to track background ranking statuses per source
+ranking_statuses: Dict[str, str] = {}
 
-# Background task executor
-def run_background_processing(db_session_factory):
-    global is_processing
+# Background ranking task executor
+def run_background_ranking(source: str, db_session_factory):
+    global ranking_statuses
+    ranking_statuses[source] = "processing"
     db = db_session_factory()
     try:
-        # 1. Semantic Deduplication
+        # Perform semantic deduplication and source-specific LLM ranking
         dedup_service.process_unprocessed_articles(db)
-        
-        # 2. Assign default score (7.0) to bypass slow LLM ranking
-        unranked = db.query(Article).filter(Article.is_duplicate == False, Article.overall_score.is_(None)).all()
-        for article in unranked:
-            article.importance_score = 7.0
-            article.relevance_score = 7.0
-            article.novelty_score = 7.0
-            article.overall_score = 7.0
-        db.commit()
+        ranking_service.rank_source_articles(db, source)
+        ranking_statuses[source] = "completed"
     except Exception as e:
-        print(f"Error in background processing task: {str(e)}")
+        print(f"Error in background ranking task for source {source}: {str(e)}")
+        ranking_statuses[source] = "failed"
     finally:
         db.close()
-        is_processing = False
 
 @app.on_event("startup")
 def on_startup():
@@ -160,48 +154,40 @@ def trigger_ingest(
         skipped_count=skipped_count
     )
 
-@app.post("/process")
-def trigger_process(background_tasks: BackgroundTasks):
+@app.post("/rank")
+def trigger_rank(
+    source: str = Query(..., description="Source type to rank (e.g. 'youtube', 'hn', 'reddit', 'github', 'arxiv', 'blog')"),
+    background_tasks: BackgroundTasks = BackgroundTasks()
+):
     """
-    Starts deduplication and ranking asynchronously in the background.
+    Starts LLM ranking for a specific source asynchronously in the background.
     """
-    global is_processing
-    if is_processing:
+    global ranking_statuses
+    if ranking_statuses.get(source) == "processing":
         return {
             "status": "processing",
-            "message": "Deduplication and ranking are already running."
+            "message": f"Ranking is already running for source: {source}"
         }
     
-    is_processing = True
-    background_tasks.add_task(run_background_processing, SessionLocal)
+    ranking_statuses[source] = "processing"
+    background_tasks.add_task(run_background_ranking, source, SessionLocal)
     return {
         "status": "processing",
-        "message": "Deduplication and LLM-ranking started in the background."
+        "message": f"LLM ranking for source '{source}' started in the background."
     }
 
-@app.get("/process-status")
-def get_process_status(db: Session = Depends(get_db)):
+@app.get("/rank-status")
+def get_rank_status(
+    source: str = Query(..., description="Source type to check status (e.g. 'youtube', 'hn')")
+):
     """
-    Checks if the background processing is currently running.
+    Checks the status of the background ranking task for a specific source.
     """
-    global is_processing
-    if is_processing:
-        # Check remaining unranked count to present info
-        from datetime import datetime, timedelta
-        time_limit = datetime.utcnow() - timedelta(hours=36)
-        unranked_count = db.query(Article).filter(
-            Article.is_duplicate == False,
-            Article.overall_score.is_(None),
-            Article.created_at >= time_limit
-        ).count()
-        return {
-            "status": "processing",
-            "remaining": unranked_count
-        }
-    
+    global ranking_statuses
+    status = ranking_statuses.get(source, "idle")
     return {
-        "status": "completed",
-        "remaining": 0
+        "status": status,
+        "source": source
     }
 
 @app.post("/generate-briefing")

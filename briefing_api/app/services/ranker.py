@@ -53,33 +53,29 @@ class RankingService:
 
     def rank_article(self, db: Session, article: Article) -> bool:
         """
-        Calls Ollama to score an article's importance, relevance, and novelty.
-        Saves scores to the database and returns True on success.
+        Calls Ollama to score an article based on whether it deserves time or can be skipped
+        without missing any technological advancements or new developer techniques.
         """
         interests_context = self._get_interests_prompt_context(db)
         
         system_prompt = (
             "You are an expert AI Analyst and Tech Research Assistant. "
-            "Your task is to analyze technical content (articles, videos, papers) and rate it based on user interests. "
+            "Your task is to analyze technical content (articles, videos, papers) and rate its value to a professional developer. "
             "You must output ONLY a valid JSON object matching this schema:\n"
             "{\n"
-            '  "importance": <integer 1-10>,\n'
-            '  "relevance": <integer 1-10>,\n'
-            '  "novelty": <integer 1-10>,\n'
+            '  "deserves_time": <integer 1-10>,\n'
+            '  "tech_advancement": <integer 1-10>,\n'
             '  "reasoning": "<short sentence explaining scores>"\n'
             "}\n"
             "Do not include any explanation outside the JSON object."
         )
 
         user_prompt = (
-            f"Please evaluate this article according to the user's tiered interests.\n\n"
-            f"--- User Interests ---\n"
-            f"{interests_context}\n"
+            f"Please evaluate this content based on whether it deserves a developer's time or if it can be skipped with zero effect on knowledge, advancement, or learning new technology techniques.\n\n"
             f"--- Scoring Criteria ---\n"
-            f"1. Importance (1-10): Technical depth, impact on the industry, or architectural significance.\n"
-            f"2. Relevance (1-10): How closely it matches the user interests list. Higher tiers MUST get higher relevance scores (e.g. Tier 1 matches = 9-10, Tier 2 = 7-8, Tier 3 = 4-6, unrelated = 1).\n"
-            f"3. Novelty (1-10): How unique, new, or non-repetitive the information is.\n\n"
-            f"--- Article Details ---\n"
+            f"1. Deserves Time (1-10): Score 9-10 if it offers high-value knowledge, deep technical insights, or actionable patterns. Score 1-3 if it is clickbait, repetitive, a basic surface-level summary, or safe to skip with no loss of knowledge.\n"
+            f"2. Tech Advancement (1-10): Score 9-10 if it introduces a major technological advancement, new framework release, innovative architectural pattern, or breakthrough tool. Score 1-3 if it covers standard tools/concepts with no new advancements.\n\n"
+            f"--- Content Details ---\n"
             f"Title: {article.title}\n"
             f"Source: {article.source_type.upper()} ({article.author or 'Unknown'})\n"
             f"Description/Summary: {article.summary or 'No description available'}\n"
@@ -106,17 +102,17 @@ class RankingService:
                 response_text = result.get("response", "").strip()
                 scores = json.loads(response_text)
                 
-                importance = float(scores.get("importance", 5))
-                relevance = float(scores.get("relevance", 5))
-                novelty = float(scores.get("novelty", 5))
+                deserves_time = float(scores.get("deserves_time", 5))
+                tech_advancement = float(scores.get("tech_advancement", 5))
                 
-                # Compute composite score
-                # Overall Score = (Relevance * 0.5) + (Importance * 0.3) + (Novelty * 0.2)
-                overall_score = (relevance * 0.5) + (importance * 0.3) + (novelty * 0.2)
+                # Compute composite score:
+                # Overall Score = (deserves_time * 0.6) + (tech_advancement * 0.4)
+                overall_score = (deserves_time * 0.6) + (tech_advancement * 0.4)
                 
-                article.importance_score = importance
-                article.relevance_score = relevance
-                article.novelty_score = novelty
+                # Map to existing db columns to avoid migrations
+                article.importance_score = deserves_time
+                article.relevance_score = tech_advancement
+                article.novelty_score = 0.0
                 article.overall_score = round(overall_score, 2)
                 
                 # Update reasoning in metadata
@@ -131,10 +127,37 @@ class RankingService:
             # Set default safe fallback scores so pipeline does not halt
             article.importance_score = 5.0
             article.relevance_score = 5.0
-            article.novelty_score = 5.0
+            article.novelty_score = 0.0
             article.overall_score = 5.0
             db.commit()
             return False
+
+    def rank_source_articles(self, db: Session, source: str) -> int:
+        """
+        Scores all non-duplicate articles for a specific source from the last 36 hours that haven't been scored yet.
+        Returns the number of articles scored.
+        """
+        from datetime import datetime, timedelta
+        time_limit = datetime.utcnow() - timedelta(hours=36)
+
+        unranked = (
+            db.query(Article)
+            .filter(
+                Article.is_duplicate == False,
+                Article.source_type == source,
+                Article.overall_score.is_(None),
+                Article.created_at >= time_limit
+            )
+            .all()
+        )
+        
+        logger.info(f"Ranking: Evaluating {len(unranked)} articles for source {source} with LLM...")
+        ranked_count = 0
+        for article in unranked:
+            if self.rank_article(db, article):
+                ranked_count += 1
+                
+        return ranked_count
 
     def rank_unranked_articles(self, db: Session) -> int:
         """

@@ -27,16 +27,17 @@ class InsightsService:
         start_time = datetime.combine(target_date, datetime.min.time()) - timedelta(hours=2)
         end_time = datetime.combine(target_date, datetime.max.time()) + timedelta(hours=2)
 
-        # Get all non-duplicate articles from today, sorted by published_at DESC (newest first)
+        # Get all non-duplicate articles from today, sorted by overall_score DESC (highest value first) and published_at DESC (newest first)
         articles = (
             db.query(Article)
             .filter(
                 Article.is_duplicate == False,
+                Article.overall_score.is_not(None),
                 Article.source_type == source,
                 Article.created_at >= start_time,
                 Article.created_at <= end_time
             )
-            .order_by(Article.published_at.desc())
+            .order_by(Article.overall_score.desc(), Article.published_at.desc())
             .all()
         )
 
@@ -64,12 +65,15 @@ class InsightsService:
                 db.commit()
                 return briefing, empty_html, empty_fragment
 
-        # Must Watch: Top 2 videos/articles
-        must_watch = articles[:2]
+        # Must Watch: Top 1 item (highest overall score)
+        must_watch = articles[:1]
         must_watch_ids = {a.id for a in must_watch}
 
-        # Rest of the items
-        other_items = [a for a in articles if a.id not in must_watch_ids][:6]
+        # Rest of the items: Next 2 items (overall top 3 total)
+        other_items = [a for a in articles if a.id not in must_watch_ids][:2]
+        
+        # Combine top 3 for the reference catalog
+        top_three_items = must_watch + other_items
 
         # Call LLM to generate Personalized Insights based on top item descriptions
         insights_text = self._generate_personalized_insights_llm(must_watch, other_items, source=source)
@@ -80,7 +84,7 @@ class InsightsService:
             must_watch=must_watch,
             other_videos=other_items,
             insights=insights_text,
-            all_articles=articles,
+            all_articles=top_three_items,
             source=source
         )
 
@@ -93,7 +97,7 @@ class InsightsService:
             must_watch=must_watch,
             other_videos=other_items,
             insights_html=insights_html,
-            all_articles=articles,
+            all_articles=top_three_items,
             source=source
         )
 
