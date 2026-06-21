@@ -1,0 +1,89 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: briefing_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_local_password_secure}
+      POSTGRES_DB: ${DB_NAME:-briefing_db}
+    ports:
+      - "${DB_HOST_PORT:-5436}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Note: On macOS, for 10x faster inference using Metal GPU acceleration, 
+  # it is highly recommended to run Ollama natively on macOS and set
+  # OLLAMA_BASE_URL=http://host.docker.internal:11434 in your .env.
+  # You can then comment out or stop this local docker service.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: briefing_ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  briefing-api:
+    build:
+      context: ./briefing_api
+      dockerfile: Dockerfile
+    container_name: briefing_api
+    restart: always
+    environment:
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres_local_password_secure}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-briefing_db}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_EMBED_MODEL=${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      - OLLAMA_LLM_MODEL=${OLLAMA_LLM_MODEL:-qwen2.5:7b-instruct}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./briefing_api:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: briefing_n8n
+    restart: always
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - N8N_PORT=5678
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_HOST=localhost
+      - N8N_PROTOCOL=http
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_SENDER=${SMTP_SENDER}
+      - SMTP_RECEIVER=${SMTP_RECEIVER}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      db:
+        condition: service_healthy
+      briefing-api:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:
+  ollama_data:
+  n8n_data:

@@ -1,0 +1,157 @@
+{
+  "name": "Daily Tech Intelligence Briefing Pipeline",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c1f73b6a-e66b-4e08-bf5b-c2e36b85df5d",
+      "name": "When clicking \"Test workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        380,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/ingest",
+        "options": {}
+      },
+      "id": "e2fcfba8-9b0e-4cb2-b430-bf8c20172cd9",
+      "name": "Trigger Ingestion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/process",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "18f154bf-5ad6-4074-8848-6c84c17fae4b",
+      "name": "Deduplicate & Rank",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://briefing-api:8000/generate-briefing",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "ff876a3e-c0fa-40f4-90a6-16f5c88b7d90",
+      "name": "Compile Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const md = $input.item.json.content;\n\n// Basic markdown-to-HTML parser\nfunction markdownToHtml(markdown) {\n  if (!markdown) return '';\n  \n  let html = markdown\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\r/g, '\\n')\n    // Headers\n    .replace(/^# (.*)$/gm, '<h1>$1</h1>')\n    .replace(/^## (.*)$/gm, '<h2>$1</h2>')\n    .replace(/^### (.*)$/gm, '<h3>$1</h3>')\n    .replace(/^#### (.*)$/gm, '<h4>$1</h4>')\n    // Code blocks\n    .replace(/```([\\s\\S]*?)```/g, '<pre><code>$1</code></pre>')\n    // Inline bold & italics\n    .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')\n    .replace(/\\*(.*?)\\*/g, '<em>$1</em>')\n    .replace(/`([^`]+)`/g, '<code>$1</code>')\n    // Hyperlinks\n    .replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, '<a href=\"$2\" target=\"_blank\">$1</a>')\n    // Blockquotes\n    .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')\n    // Table conversions\n    .replace(/\\| (.+?) \\|/g, '<td>$1</td>')\n    .replace(/<\\/td>\\n<td>/g, '</td><td>')\n    // Paragraph replacements & lists\n    .replace(/^- (.*)$/gm, '<li>$1</li>');\n\n  // Group lists\n  html = html.replace(/((?:<li>.*<\\/li>\\n?)+)/g, '<ul>$1</ul>');\n  \n  // Convert tables lines to rows\n  // Note: For simplicity of email rendering, table rows are split by newlines\n  let lines = html.split('\\n');\n  let inTable = false;\n  for (let i = 0; i < lines.length; i++) {\n    if (lines[i].includes('<td>')) {\n      if (!inTable) {\n        lines[i] = '<table><tr>' + lines[i] + '</tr>';\n        inTable = true;\n      } else {\n        if (lines[i].includes('---')) {\n          lines[i] = ''; // Skip header divider\n        } else {\n          lines[i] = '<tr>' + lines[i] + '</tr>';\n        }\n      }\n    } else {\n      if (inTable) {\n        lines[i] = '</table>' + lines[i];\n        inTable = false;\n      }\n    }\n  }\n  html = lines.join('\\n');\n\n  // Replace standard double newlines with spacing\n  html = html.replace(/\\n\\n/g, '<br><br>');\n  \n  return html;\n}\n\nconst parsedHtml = markdownToHtml(md);\n\n// Inline-styled premium email wrapper\nconst emailTemplate = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Daily Tech Intelligence Briefing</title>\n  <style>\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n      line-height: 1.6;\n      color: #1c1e21;\n      background-color: #f0f2f5;\n      margin: 0;\n      padding: 20px 10px;\n    }\n    .wrapper {\n      max-width: 650px;\n      margin: 0 auto;\n      background-color: #ffffff;\n      border-radius: 8px;\n      overflow: hidden;\n      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);\n      border: 1px solid #e4e6eb;\n    }\n    .header {\n      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);\n      color: #ffffff;\n      padding: 30px 25px;\n      text-align: center;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 24px;\n      font-weight: 700;\n      letter-spacing: -0.5px;\n    }\n    .header p {\n      margin: 5px 0 0 0;\n      font-size: 14px;\n      opacity: 0.85;\n    }\n    .content {\n      padding: 30px 25px;\n    }\n    h2 {\n      color: #1a365d;\n      border-bottom: 2px solid #ebedf0;\n      padding-bottom: 8px;\n      margin-top: 35px;\n      font-size: 18px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    h3 {\n      color: #2b6cb0;\n      font-size: 16px;\n      margin-top: 20px;\n      margin-bottom: 8px;\n    }\n    a {\n      color: #3182ce;\n      text-decoration: none;\n      font-weight: 550;\n    }\n    a:hover {\n      text-decoration: underline;\n    }\n    blockquote {\n      margin: 15px 0;\n      padding: 12px 20px;\n      background-color: #f7fafc;\n      border-left: 4px solid #3182ce;\n      color: #4a5568;\n      font-style: italic;\n    }\n    code {\n      font-family: SFMono-Regular, Consolas, \"Liberation Mono\", Menlo, monospace;\n      background-color: #edf2f7;\n      padding: 2px 6px;\n      border-radius: 4px;\n      font-size: 13px;\n      color: #2d3748;\n    }\n    pre {\n      background-color: #1a202c;\n      color: #f7fafc;\n      padding: 15px;\n      border-radius: 6px;\n      overflow-x: auto;\n    }\n    pre code {\n      background-color: transparent;\n      color: inherit;\n      padding: 0;\n    }\n    ul {\n      padding-left: 20px;\n      margin-top: 10px;\n    }\n    li {\n      margin-bottom: 8px;\n    }\n    table {\n      width: 100%;\n      border-collapse: collapse;\n      margin: 20px 0;\n      font-size: 13px;\n    }\n    th, td {\n      border: 1px solid #e2e8f0;\n      padding: 10px 12px;\n      text-align: left;\n    }\n    th {\n      background-color: #f7fafc;\n      color: #4a5568;\n      font-weight: 600;\n    }\n    tr:nth-child(even) {\n      background-color: #fafdff;\n    }\n    .footer {\n      background-color: #f7fafc;\n      color: #718096;\n      padding: 20px 25px;\n      text-align: center;\n      font-size: 11px;\n      border-top: 1px solid #edf2f7;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"header\">\n      <h1>DAILY TECH INTELLIGENCE BRIEFING</h1>\n      <p>Self-Hosted Local AI Analyst System</p>\n    </div>\n    <div class=\"content\">\n      ${parsedHtml}\n    </div>\n    <div class=\"footer\">\n      Generated automatically on your local host via Docker, pgvector, Ollama & n8n.<br>\n      Zero recurring SaaS charges. Keep building.\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nreturn {\n  html: emailTemplate,\n  date: $input.item.json.date,\n  smtp_sender: $input.item.json.smtp_sender,\n  smtp_receiver: $input.item.json.smtp_receiver\n};"
+      },
+      "id": "a90dfb9e-64d8-4903-a185-3bc8b6cf7935",
+      "name": "Parse & Style HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{$json.smtp_sender}}",
+        "toEmail": "={{$json.smtp_receiver}}",
+        "subject": "=Daily AI & Tech Briefing - {{$json.date}}",
+        "html": "={{$json.html}}",
+        "options": {}
+      },
+      "id": "e2a537f8-e9f0-466a-912a-7bf01fbe3277",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking \"Test workflow\"": {
+      "main": [
+        [
+          {
+            "node": "Trigger Ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Ingestion": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate & Rank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate & Rank": {
+      "main": [
+        [
+          {
+            "node": "Compile Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Briefing": {
+      "main": [
+        [
+          {
+            "node": "Parse & Style HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Style HTML": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionTimeout": 3600
+  },
+  "active": true
+}
