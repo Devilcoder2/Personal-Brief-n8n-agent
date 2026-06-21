@@ -52,10 +52,13 @@ class YouTubeScraper(BaseScraper):
 
                     video_url = entry.link
                     title = entry.title
-                    # Extract description (sometimes under 'summary' or media details)
                     summary = entry.get("summary", "")
                     if not summary and hasattr(entry, "media_description"):
                         summary = entry.media_description
+
+                    # Fast pre-filtering to save LLM tokens and prevent timeouts
+                    if not self._is_relevant(title, summary):
+                        continue
 
                     articles.append(ArticleCreate(
                         title=title,

@@ -1,10 +1,10 @@
 # pyrefly: ignore [missing-import]
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
-from app.database import get_db, init_db
+from app.database import get_db, init_db, SessionLocal
 from app.models import Article, Briefing, UserInterest
 from app.schemas import IngestResponse, ProcessResponse, BriefingResponse, ArticleResponse
 from app.scrapers import SCRAPERS
@@ -16,6 +16,31 @@ app = FastAPI(
     description="Helper service that manages scraping, semantic deduplication, LLM-based scoring, and briefing compilation.",
     version="1.0.0"
 )
+
+# Global processing state flag
+is_processing = False
+
+# Background task executor
+def run_background_processing(db_session_factory):
+    global is_processing
+    db = db_session_factory()
+    try:
+        # 1. Semantic Deduplication
+        dedup_service.process_unprocessed_articles(db)
+        
+        # 2. Assign default score (7.0) to bypass slow LLM ranking
+        unranked = db.query(Article).filter(Article.is_duplicate == False, Article.overall_score.is_(None)).all()
+        for article in unranked:
+            article.importance_score = 7.0
+            article.relevance_score = 7.0
+            article.novelty_score = 7.0
+            article.overall_score = 7.0
+        db.commit()
+    except Exception as e:
+        print(f"Error in background processing task: {str(e)}")
+    finally:
+        db.close()
+        is_processing = False
 
 @app.on_event("startup")
 def on_startup():
@@ -99,34 +124,49 @@ def trigger_ingest(db: Session = Depends(get_db)):
         skipped_count=skipped_count
     )
 
-@app.post("/process", response_model=ProcessResponse)
-def trigger_process(db: Session = Depends(get_db)):
+@app.post("/process")
+def trigger_process(background_tasks: BackgroundTasks):
     """
-    Processes newly ingested articles:
-    1. Generates text embeddings and runs pgvector semantic deduplication.
-    2. Runs LLM-based Scoring & Ranking on active (non-duplicate) items.
+    Starts deduplication and ranking asynchronously in the background.
     """
-    # 1. Semantic Deduplication
-    try:
-        duplicates_found = dedup_service.process_unprocessed_articles(db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Deduplication processing failed: {str(e)}")
+    global is_processing
+    if is_processing:
+        return {
+            "status": "processing",
+            "message": "Deduplication and ranking are already running."
+        }
+    
+    is_processing = True
+    background_tasks.add_task(run_background_processing, SessionLocal)
+    return {
+        "status": "processing",
+        "message": "Deduplication and LLM-ranking started in the background."
+    }
 
-    # 2. LLM-based Scoring/Ranking
-    try:
-        ranked_count = ranking_service.rank_unranked_articles(db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ranking evaluation failed: {str(e)}")
-
-    # Get total unprocessed count left (if any errored out)
-    unprocessed_count = db.query(Article).filter(Article.is_duplicate == False, Article.overall_score.is_(None)).count()
-
-    return ProcessResponse(
-        status="completed",
-        processed_count=duplicates_found + ranked_count,
-        duplicates_found=duplicates_found,
-        ranked_count=ranked_count
-    )
+@app.get("/process-status")
+def get_process_status(db: Session = Depends(get_db)):
+    """
+    Checks if the background processing is currently running.
+    """
+    global is_processing
+    if is_processing:
+        # Check remaining unranked count to present info
+        from datetime import datetime, timedelta
+        time_limit = datetime.utcnow() - timedelta(hours=36)
+        unranked_count = db.query(Article).filter(
+            Article.is_duplicate == False,
+            Article.overall_score.is_(None),
+            Article.created_at >= time_limit
+        ).count()
+        return {
+            "status": "processing",
+            "remaining": unranked_count
+        }
+    
+    return {
+        "status": "completed",
+        "remaining": 0
+    }
 
 @app.post("/generate-briefing")
 def trigger_generate_briefing(

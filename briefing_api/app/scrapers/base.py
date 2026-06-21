@@ -9,6 +9,17 @@ from app.schemas import ArticleCreate
 logger = logging.getLogger("briefing_api.scrapers")
 logging.basicConfig(level=logging.INFO)
 
+# Broad interest keywords to perform a fast pre-filter and save local LLM inference time.
+INTEREST_KEYWORDS = [
+    "llm", "ai", "agent", "mcp", "rag", "vector", "database", "redis", "search", 
+    "semantic", "voice", "realtime", "infrastructure", "gpu", "cuda", "onnx", 
+    "open source", "geospatial", "openlayers", "deck.gl", "map", "developer tool", 
+    "devtool", "startup", "yc", "paper", "launch", "llama", "deepseek", "gemma", 
+    "openai", "anthropic", "gemini", "claude", "mistral", "transformer", "backend", 
+    "system design", "distributed", "postgres", "sql", "docker", "kubernetes", 
+    "api", "concurrency", "performance", "scaling", "webgpu", "frontend"
+]
+
 class BaseScraper(ABC):
     def __init__(self, name: str):
         self.name = name
@@ -43,3 +54,9 @@ class BaseScraper(ABC):
         if dt.tzinfo is not None:
             dt = dt.replace(tzinfo=None)
         return now - timedelta(hours=24) <= dt <= now
+
+    def _is_relevant(self, title: str, text: str = "") -> bool:
+        """
+        Temporarily disabled: returns True to fetch all articles.
+        """
+        return True

@@ -6,18 +6,6 @@ from app.schemas import ArticleCreate
 
 logger = logging.getLogger("briefing_api.scrapers.hn")
 
-# Broad interest keywords to perform a fast pre-filter and save LLM token costs.
-# Any item containing one of these in its title will be forwarded to the LLM scoring layer.
-INTEREST_KEYWORDS = [
-    "llm", "ai", "agent", "mcp", "rag", "vector", "database", "redis", "search", 
-    "semantic", "voice", "realtime", "infrastructure", "gpu", "cuda", "onnx", 
-    "open source", "geospatial", "openlayers", "deck.gl", "map", "developer tool", 
-    "devtool", "startup", "yc", "paper", "launch", "llama", "deepseek", "gemma", 
-    "openai", "anthropic", "gemini", "claude", "mistral", "transformer", "backend", 
-    "system design", "distributed", "postgres", "sql", "docker", "kubernetes", 
-    "api", "concurrency", "performance", "scaling", "webgpu", "frontend"
-]
-
 class HackerNewsScraper(BaseScraper):
     def __init__(self):
         super().__init__("Hacker News")
@@ -73,11 +61,7 @@ class HackerNewsScraper(BaseScraper):
                         text_content = item.get("text", "") # For Ask HN / Show HN text
 
                         # Keyword pre-filtering to save local LLM inference time
-                        title_lower = title.lower()
-                        text_lower = text_content.lower() if text_content else ""
-                        is_relevant = any(kw in title_lower or kw in text_lower for kw in INTEREST_KEYWORDS)
-
-                        if not is_relevant:
+                        if not self._is_relevant(title, text_content):
                             continue
 
                         articles.append(ArticleCreate(

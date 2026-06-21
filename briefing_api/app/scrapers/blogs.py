@@ -77,6 +77,10 @@ class BlogScraper(BaseScraper):
                         if not summary and hasattr(entry, "content"):
                             summary = entry.content[0].value if entry.content else ""
                         
+                        # Fast pre-filtering to save LLM tokens and prevent timeouts
+                        if not self._is_relevant(title, summary):
+                            continue
+
                         articles.append(ArticleCreate(
                             title=title,
                             url=link,

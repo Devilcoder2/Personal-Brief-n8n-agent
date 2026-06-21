@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from typing import List
 from app.scrapers.base import BaseScraper
-from app.scrapers.hn import INTEREST_KEYWORDS
 from app.schemas import ArticleCreate
 
 logger = logging.getLogger("briefing_api.scrapers.reddit")
@@ -57,11 +56,7 @@ class RedditScraper(BaseScraper):
                     selftext = post_data.get("selftext", "")
 
                     # Check relevance
-                    title_lower = title.lower()
-                    text_lower = selftext.lower() if selftext else ""
-                    is_relevant = any(kw in title_lower or kw in text_lower for kw in INTEREST_KEYWORDS)
-
-                    if not is_relevant:
+                    if not self._is_relevant(title, selftext):
                         continue
 
                     final_url = post_url
@@ -112,11 +107,7 @@ class RedditScraper(BaseScraper):
                         content = entry.get("summary", "") # RSS summary contains HTML content description
                         
                         # relevance check
-                        title_lower = title.lower()
-                        text_lower = content.lower() if content else ""
-                        is_relevant = any(kw in title_lower or kw in text_lower for kw in INTEREST_KEYWORDS)
-                        
-                        if not is_relevant:
+                        if not self._is_relevant(title, content):
                             continue
                             
                         articles.append(ArticleCreate(

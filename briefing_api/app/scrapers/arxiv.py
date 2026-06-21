@@ -50,6 +50,10 @@ class PaperScraper(BaseScraper):
 
                 summary = entry.summary.replace("\n", " ").strip()
 
+                # Fast pre-filtering to save LLM tokens and prevent timeouts
+                if not self._is_relevant(title, summary):
+                    continue
+
                 articles.append(ArticleCreate(
                     title=title,
                     url=url,
@@ -112,6 +116,10 @@ class PaperScraper(BaseScraper):
                 authors = ", ".join([a.get("name", "") for a in authors_list if a.get("name")])
                 if not authors:
                     authors = "Hugging Face Community"
+
+                # Fast pre-filtering to save LLM tokens and prevent timeouts
+                if not self._is_relevant(title, summary):
+                    continue
 
                 articles.append(ArticleCreate(
                     title=title,

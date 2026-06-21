@@ -8,7 +8,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        380,
+        260,
         240
       ]
     },
@@ -23,7 +23,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        560,
+        440,
         240
       ]
     },
@@ -31,16 +31,63 @@
       "parameters": {
         "method": "POST",
         "url": "http://briefing-api:8000/process",
-        "options": {
-          "timeout": 300000
-        }
+        "options": {}
       },
       "id": "18f154bf-5ad6-4074-8848-6c84c17fae4b",
       "name": "Deduplicate & Rank",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        740,
+        620,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "seconds"
+      },
+      "id": "7f61c3ea-a4e9-4e0d-bfbf-26d83e20bfd1",
+      "name": "Wait 10s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        800,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://briefing-api:8000/process-status",
+        "options": {}
+      },
+      "id": "a1f9e2b1-6a0b-4e6f-9988-cb92671f2cd1",
+      "name": "Check Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "6a3f9e2d-c12b-4e0d-b8d9-cc827d30bf65",
+      "name": "Is Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1160,
         240
       ]
     },
@@ -57,22 +104,22 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        920,
-        240
+        1360,
+        180
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const md = $input.item.json.content;\n\n// Basic markdown-to-HTML parser\nfunction markdownToHtml(markdown) {\n  if (!markdown) return '';\n  \n  let html = markdown\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\r/g, '\\n')\n    // Headers\n    .replace(/^# (.*)$/gm, '<h1>$1</h1>')\n    .replace(/^## (.*)$/gm, '<h2>$1</h2>')\n    .replace(/^### (.*)$/gm, '<h3>$1</h3>')\n    .replace(/^#### (.*)$/gm, '<h4>$1</h4>')\n    // Code blocks\n    .replace(/```([\\s\\S]*?)```/g, '<pre><code>$1</code></pre>')\n    // Inline bold & italics\n    .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')\n    .replace(/\\*(.*?)\\*/g, '<em>$1</em>')\n    .replace(/`([^`]+)`/g, '<code>$1</code>')\n    // Hyperlinks\n    .replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, '<a href=\"$2\" target=\"_blank\">$1</a>')\n    // Blockquotes\n    .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')\n    // Table conversions\n    .replace(/\\| (.+?) \\|/g, '<td>$1</td>')\n    .replace(/<\\/td>\\n<td>/g, '</td><td>')\n    // Paragraph replacements & lists\n    .replace(/^- (.*)$/gm, '<li>$1</li>');\n\n  // Group lists\n  html = html.replace(/((?:<li>.*<\\/li>\\n?)+)/g, '<ul>$1</ul>');\n  \n  // Convert tables lines to rows\n  // Note: For simplicity of email rendering, table rows are split by newlines\n  let lines = html.split('\\n');\n  let inTable = false;\n  for (let i = 0; i < lines.length; i++) {\n    if (lines[i].includes('<td>')) {\n      if (!inTable) {\n        lines[i] = '<table><tr>' + lines[i] + '</tr>';\n        inTable = true;\n      } else {\n        if (lines[i].includes('---')) {\n          lines[i] = ''; // Skip header divider\n        } else {\n          lines[i] = '<tr>' + lines[i] + '</tr>';\n        }\n      }\n    } else {\n      if (inTable) {\n        lines[i] = '</table>' + lines[i];\n        inTable = false;\n      }\n    }\n  }\n  html = lines.join('\\n');\n\n  // Replace standard double newlines with spacing\n  html = html.replace(/\\n\\n/g, '<br><br>');\n  \n  return html;\n}\n\nconst parsedHtml = markdownToHtml(md);\n\n// Inline-styled premium email wrapper\nconst emailTemplate = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Daily Tech Intelligence Briefing</title>\n  <style>\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n      line-height: 1.6;\n      color: #1c1e21;\n      background-color: #f0f2f5;\n      margin: 0;\n      padding: 20px 10px;\n    }\n    .wrapper {\n      max-width: 650px;\n      margin: 0 auto;\n      background-color: #ffffff;\n      border-radius: 8px;\n      overflow: hidden;\n      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);\n      border: 1px solid #e4e6eb;\n    }\n    .header {\n      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);\n      color: #ffffff;\n      padding: 30px 25px;\n      text-align: center;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 24px;\n      font-weight: 700;\n      letter-spacing: -0.5px;\n    }\n    .header p {\n      margin: 5px 0 0 0;\n      font-size: 14px;\n      opacity: 0.85;\n    }\n    .content {\n      padding: 30px 25px;\n    }\n    h2 {\n      color: #1a365d;\n      border-bottom: 2px solid #ebedf0;\n      padding-bottom: 8px;\n      margin-top: 35px;\n      font-size: 18px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    h3 {\n      color: #2b6cb0;\n      font-size: 16px;\n      margin-top: 20px;\n      margin-bottom: 8px;\n    }\n    a {\n      color: #3182ce;\n      text-decoration: none;\n      font-weight: 550;\n    }\n    a:hover {\n      text-decoration: underline;\n    }\n    blockquote {\n      margin: 15px 0;\n      padding: 12px 20px;\n      background-color: #f7fafc;\n      border-left: 4px solid #3182ce;\n      color: #4a5568;\n      font-style: italic;\n    }\n    code {\n      font-family: SFMono-Regular, Consolas, \"Liberation Mono\", Menlo, monospace;\n      background-color: #edf2f7;\n      padding: 2px 6px;\n      border-radius: 4px;\n      font-size: 13px;\n      color: #2d3748;\n    }\n    pre {\n      background-color: #1a202c;\n      color: #f7fafc;\n      padding: 15px;\n      border-radius: 6px;\n      overflow-x: auto;\n    }\n    pre code {\n      background-color: transparent;\n      color: inherit;\n      padding: 0;\n    }\n    ul {\n      padding-left: 20px;\n      margin-top: 10px;\n    }\n    li {\n      margin-bottom: 8px;\n    }\n    table {\n      width: 100%;\n      border-collapse: collapse;\n      margin: 20px 0;\n      font-size: 13px;\n    }\n    th, td {\n      border: 1px solid #e2e8f0;\n      padding: 10px 12px;\n      text-align: left;\n    }\n    th {\n      background-color: #f7fafc;\n      color: #4a5568;\n      font-weight: 600;\n    }\n    tr:nth-child(even) {\n      background-color: #fafdff;\n    }\n    .footer {\n      background-color: #f7fafc;\n      color: #718096;\n      padding: 20px 25px;\n      text-align: center;\n      font-size: 11px;\n      border-top: 1px solid #edf2f7;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"header\">\n      <h1>DAILY TECH INTELLIGENCE BRIEFING</h1>\n      <p>Self-Hosted Local AI Analyst System</p>\n    </div>\n    <div class=\"content\">\n      ${parsedHtml}\n    </div>\n    <div class=\"footer\">\n      Generated automatically on your local host via Docker, pgvector, Ollama & n8n.<br>\n      Zero recurring SaaS charges. Keep building.\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nreturn {\n  html: emailTemplate,\n  date: $input.item.json.date,\n  smtp_sender: $input.item.json.smtp_sender,\n  smtp_receiver: $input.item.json.smtp_receiver\n};"
+        "jsCode": "const md = $input.item.json.content;\n\n// Custom markdown-to-styled HTML parser for video emails\nfunction parseMarkdown(markdown) {\n  if (!markdown) return '';\n  \n  let html = markdown\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\r/g, '\\n');\n\n  // Convert must watch video headers & blocks\n  // Matches: ### [title](url)\n  //          **Channel:** `author` | **Watch Link:** ...\n  //          > summary\n  html = html.replace(/### \\[(.*?)\\]\\((.*?)\\)\\n\\*\\*Channel:\\*\\* `(.*?)` \\| \\*\\*Watch Link:\\*\\* \\[.*?\\]\\(.*?\\)\\n> (.*?)(?=\\n\\n|\\n###|\\n##|$)/g, \n    '<div class=\"must-watch-card\">' +\n    '  <h3><a href=\"$2\" target=\"_blank\">$1</a></h3>' +\n    '  <div class=\"meta\">' +\n    '    <span class=\"badge badge-primary\">$3</span>' +\n    '    <a class=\"btn-watch\" href=\"$2\" target=\"_blank\">Watch on YouTube ➔</a>' +\n    '  </div>' +\n    '  <blockquote>$4</blockquote>' +\n    '</div>'\n  );\n\n  // Convert remaining sections\n  // Headers\n  html = html.replace(/^# (.*)$/gm, '<h1 class=\"main-title\">$1</h1>')\n             .replace(/^## 🔥 Must Watch$/gm, '<h2 class=\"section-header\"><span style=\"color:#f59e0b\">🔥</span> Must Watch Videos</h2>')\n             .replace(/^## 🎥 More Video Releases$/gm, '<h2 class=\"section-header\"><span style=\"color:#3b82f6\">🎥</span> More Video Releases</h2>')\n             .replace(/^## ⭐ Analyst Insights$/gm, '') // Handled separately to wrap\n             .replace(/^## 🔗 Sources & Videos Reference$/gm, '<h2 class=\"section-header\"><span style=\"color:#64748b\">🔗</span> Reference Catalogue</h2>')\n             .replace(/^#### (.*)$/gm, '<h4 class=\"sub-header\">$1</h4>');\n\n  // Convert list items: - **[title](url)** - `author` Description...\n  html = html.replace(/^- \\*\\*\\[(.*?)\\]\\((.*?)\\)\\*\\* - `(.*?)`\\n\\s+\\*Description: (.*?)\\*$/gm, \n    '<li class=\"video-list-item\">' +\n    '  <a class=\"video-link\" href=\"$2\" target=\"_blank\">$1</a>' +\n    '  <div class=\"meta-inline\"><span class=\"badge badge-secondary\">$3</span></div>' +\n    '  <p class=\"desc\">$4</p>' +\n    '</li>'\n  );\n\n  // Table parsing\n  html = html.replace(/\\| (.+?) \\|/g, '<td>$1</td>')\n             .replace(/<\\/td>\\n<td>/g, '</td><td>')\n             .replace(/^- (.*)$/gm, '<li>$1</li>');\n\n  let lines = html.split('\\n');\n  let inTable = false;\n  for (let i = 0; i < lines.length; i++) {\n    if (lines[i].includes('<td>')) {\n      if (!inTable) {\n        lines[i] = '<table class=\"ref-table\"><tr>' + lines[i] + '</tr>';\n        inTable = true;\n      } else {\n        if (lines[i].includes('---')) {\n          lines[i] = ''; \n        } else {\n          lines[i] = '<tr>' + lines[i] + '</tr>';\n        }\n      }\n    } else {\n      if (inTable) {\n        lines[i] = '</table>' + lines[i];\n        inTable = false;\n      }\n    }\n  }\n  html = lines.join('\\n');\n\n  // Convert links & bold in remaining text\n  html = html.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')\n             .replace(/\\*(.*?)\\*/g, '<em>$1</em>')\n             .replace(/`([^`]+)`/g, '<code>$1</code>')\n             .replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, '<a href=\"$2\" target=\"_blank\">$1</a>')\n             .replace(/((?:<li>.*<\\/li>\\n?)+)/g, '<ul>$1</ul>')\n             .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>');\n\n  // Split by insights header to wrap in styled container\n  if (html.includes('## ⭐ Analyst Insights')) {\n    let parts = html.split('## ⭐ Analyst Insights');\n    let mainContent = parts[0];\n    let insightsAndFooter = parts[1];\n    \n    // Split references out of insights\n    let subParts = insightsAndFooter.split('<h2 class=\"section-header\"><span style=\"color:#64748b\">🔗</span> Reference Catalogue</h2>');\n    let insightsBody = subParts[0];\n    let referenceTable = subParts[1] || '';\n    \n    html = mainContent + \n           '<div class=\"insights-container\">' +\n           '  <div class=\"insights-header\">⭐ Analyst Synthesis & Insights</div>' +\n           insightsBody +\n           '</div>' +\n           '<h2 class=\"section-header\"><span style=\"color:#64748b\">🔗</span> Reference Catalogue</h2>' +\n           referenceTable;\n  }\n\n  // Clean up double breaks\n  html = html.replace(/\\n\\n/g, '<br>');\n  \n  return html;\n}\n\nconst parsedHtml = parseMarkdown(md);\n\n// Inline-styled editorial-grade email wrapper\nconst emailTemplate = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Daily Developer Video Briefing</title>\n  <style>\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n      line-height: 1.55;\n      color: #1e293b;\n      background-color: #f8fafc;\n      margin: 0;\n      padding: 30px 10px;\n      -webkit-font-smoothing: antialiased;\n    }\n    .wrapper {\n      max-width: 620px;\n      margin: 0 auto;\n      background-color: #ffffff;\n      border-radius: 12px;\n      overflow: hidden;\n      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);\n      border: 1px solid #e2e8f0;\n    }\n    .header {\n      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);\n      color: #ffffff;\n      padding: 35px 30px;\n      text-align: center;\n      border-bottom: 3px solid #f59e0b;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 20px;\n      font-weight: 800;\n      letter-spacing: 1px;\n      text-transform: uppercase;\n      color: #f8fafc;\n    }\n    .header p {\n      margin: 6px 0 0 0;\n      font-size: 13px;\n      color: #94a3b8;\n      font-weight: 500;\n      letter-spacing: 0.5px;\n    }\n    .content {\n      padding: 35px 30px;\n    }\n    .section-header {\n      color: #0f172a;\n      font-size: 17px;\n      font-weight: 700;\n      margin-top: 40px;\n      margin-bottom: 20px;\n      padding-bottom: 8px;\n      border-bottom: 1px solid #e2e8f0;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .sub-header {\n      color: #334155;\n      font-size: 13px;\n      font-weight: 700;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      margin-top: 22px;\n      margin-bottom: 6px;\n    }\n    .must-watch-card {\n      background-color: #ffffff;\n      border: 1px solid #e2e8f0;\n      border-left: 4px solid #f59e0b;\n      border-radius: 8px;\n      padding: 22px;\n      margin-bottom: 22px;\n      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01);\n    }\n    .must-watch-card h3 {\n      margin: 0 0 10px 0;\n      font-size: 16px;\n      font-weight: 700;\n      line-height: 1.4;\n    }\n    .must-watch-card h3 a {\n      color: #0f172a;\n      text-decoration: none;\n    }\n    .must-watch-card h3 a:hover {\n      color: #3182ce;\n      text-decoration: underline;\n    }\n    .meta {\n      margin-bottom: 14px;\n      font-size: 12px;\n      display: block;\n    }\n    .meta-inline {\n      display: inline-block;\n      margin-left: 6px;\n    }\n    .badge {\n      display: inline-block;\n      padding: 3px 10px;\n      font-size: 10px;\n      font-weight: 700;\n      border-radius: 12px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .badge-primary {\n      background-color: #eff6ff;\n      color: #1d4ed8;\n    }\n    .badge-secondary {\n      background-color: #f1f5f9;\n      color: #475569;\n    }\n    .btn-watch {\n      display: inline-block;\n      margin-left: 10px;\n      color: #b45309;\n      text-decoration: none;\n      font-weight: 700;\n    }\n    .btn-watch:hover {\n      text-decoration: underline;\n    }\n    .must-watch-card blockquote {\n      margin: 0;\n      padding: 0;\n      border-left: none;\n      font-style: normal;\n      font-size: 13.5px;\n      color: #475569;\n      line-height: 1.55;\n    }\n    .video-list {\n      list-style: none;\n      padding: 0;\n      margin: 0;\n    }\n    .video-list-item {\n      border-bottom: 1px solid #f1f5f9;\n      padding-bottom: 16px;\n      margin-bottom: 16px;\n    }\n    .video-list-item:last-child {\n      border-bottom: none;\n      padding-bottom: 0;\n      margin-bottom: 0;\n    }\n    .video-link {\n      color: #0f172a;\n      font-weight: 600;\n      font-size: 14.5px;\n      text-decoration: none;\n      line-height: 1.4;\n    }\n    .video-link:hover {\n      color: #2563eb;\n      text-decoration: underline;\n    }\n    .video-list-item .desc {\n      margin: 6px 0 0 0;\n      font-size: 13px;\n      color: #64748b;\n    }\n    .insights-container {\n      background-color: #f8fafc;\n      border: 1px solid #e2e8f0;\n      border-radius: 8px;\n      padding: 25px;\n      margin-top: 35px;\n      margin-bottom: 25px;\n    }\n    .insights-header {\n      font-size: 14px;\n      font-weight: 800;\n      color: #1e3a8a;\n      text-transform: uppercase;\n      letter-spacing: 1px;\n      border-bottom: 1px solid #cbd5e1;\n      padding-bottom: 10px;\n      margin-bottom: 15px;\n    }\n    .insights-container h4 {\n      color: #1e293b;\n    }\n    .insights-container p, .insights-container li {\n      font-size: 13.5px;\n      color: #334155;\n      line-height: 1.6;\n    }\n    code {\n      font-family: Menlo, Consolas, Monaco, monospace;\n      background-color: #f1f5f9;\n      padding: 2px 6px;\n      border-radius: 4px;\n      font-size: 12.5px;\n      color: #0f172a;\n    }\n    .ref-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin: 20px 0 0 0;\n      font-size: 12px;\n    }\n    .ref-table th, .ref-table td {\n      border: 1px solid #e2e8f0;\n      padding: 8px 10px;\n      text-align: left;\n    }\n    .ref-table th {\n      background-color: #f8fafc;\n      color: #475569;\n      font-weight: 600;\n    }\n    .ref-table tr:nth-child(even) {\n      background-color: #fafafa;\n    }\n    .footer {\n      background-color: #f8fafc;\n      color: #64748b;\n      padding: 22px;\n      text-align: center;\n      font-size: 11px;\n      border-top: 1px solid #e2e8f0;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"header\">\n      <h1>DAILY DEVELOPER VIDEO BRIEFING</h1>\n      <p>Self-Hosted Local AI Analyst System</p>\n    </div>\n    <div class=\"content\">\n      ${parsedHtml}\n    </div>\n    <div class=\"footer\">\n      Generated automatically on your local host via Docker, pgvector, Ollama & n8n.<br>\n      Zero recurring SaaS charges. Keep building.\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nreturn {\n  html: emailTemplate,\n  date: $input.item.json.date,\n  smtp_sender: $input.item.json.smtp_sender,\n  smtp_receiver: $input.item.json.smtp_receiver\n};"
       },
       "id": "a90dfb9e-64d8-4903-a185-3bc8b6cf7935",
       "name": "Parse & Style HTML",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
-        240
+        1560,
+        180
       ]
     },
     {
@@ -88,8 +135,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
-        1280,
-        240
+        1740,
+        180
       ]
     }
   ],
@@ -120,7 +167,47 @@
       "main": [
         [
           {
+            "node": "Wait 10s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10s": {
+      "main": [
+        [
+          {
+            "node": "Check Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status": {
+      "main": [
+        [
+          {
+            "node": "Is Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete?": {
+      "main": [
+        [
+          {
             "node": "Compile Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 10s",
             "type": "main",
             "index": 0
           }

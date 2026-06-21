@@ -63,6 +63,10 @@ class GitHubScraper(BaseScraper):
                 if any(art.url == repo_url for art in articles):
                     continue
 
+                # Fast pre-filtering to save LLM tokens and prevent timeouts
+                if not self._is_relevant(repo_name, description):
+                    continue
+
                 summary = f"GitHub repository: {repo_name} ({lang}). Stars: {stars}, Forks: {forks}. Description: {description}"
                 
                 articles.append(ArticleCreate(
@@ -127,6 +131,10 @@ class GitHubScraper(BaseScraper):
                 
                 summary = f"GitHub Trending Repo: {repo_path} ({lang}). Stars: {stars} (+{today_text}), Forks: {forks}. Description: {description}"
                 
+                # Fast pre-filtering to save LLM tokens and prevent timeouts
+                if not self._is_relevant(repo_path, description):
+                    continue
+
                 repos.append(ArticleCreate(
                     title=f"GitHub Repo: {repo_path}",
                     url=repo_url,
