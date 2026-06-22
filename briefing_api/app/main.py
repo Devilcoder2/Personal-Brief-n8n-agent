@@ -106,9 +106,9 @@ def trigger_ingest(
                 "hackernews": "hacker news",
                 "reddit": "reddit",
                 "github": "github",
-                "arxiv": "arxiv",
-                "paper": "arxiv",
-                "research": "arxiv",
+                "arxiv": "papers",
+                "paper": "papers",
+                "research": "papers",
                 "blog": "blogs",
                 "blogs": "blogs"
             }

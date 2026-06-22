@@ -10,6 +10,26 @@ from app.models import Article, Briefing
 
 logger = logging.getLogger("briefing_api.services.insights")
 
+def get_one_line_explanation(text: str) -> str:
+    if not text:
+        return "No description available."
+    # Clean newlines, carriage returns, and strip whitespace
+    clean = text.replace("\n", " ").replace("\r", " ").strip()
+    
+    # Try to grab the first sentence
+    sentences = clean.split(". ")
+    first_sentence = sentences[0].strip() if sentences else clean
+    
+    # If the first sentence is too long, truncate it
+    if len(first_sentence) > 150:
+        return first_sentence[:147] + "..."
+        
+    # Ensure it ends with a period if it looks like a sentence and is short enough
+    if first_sentence and not first_sentence.endswith(".") and len(first_sentence) < 147:
+        first_sentence += "."
+        
+    return first_sentence
+
 class InsightsService:
     def __init__(self):
         self.base_url = settings.OLLAMA_BASE_URL
@@ -273,125 +293,85 @@ class InsightsService:
                                insights_html: str, all_articles: list[Article], source: str = "youtube") -> str:
         """
         Assembles a styled HTML block for a specific source to be embedded in the main briefing.
+        Format matches:
+          SUB HEADING - {{INDEX}}: SOURCE
+          Top 3 Items to Go through
+          Tabular format with 3 columns (Title | What it Explains | Link)
         """
         source_label = "Items"
         source_singular = "Item"
         action_label = "Read"
+        source_upper = source.upper()
         
         if source == "youtube":
-            source_label = "YouTube Videos"
+            source_label = "Videos"
             source_singular = "Video"
-            action_label = "Watch Video"
+            action_label = "Watch"
+            source_upper = "YOUTUBE"
         elif source == "hn":
-            source_label = "Hacker News Stories"
+            source_label = "Stories"
             source_singular = "Story"
-            action_label = "Read Story"
+            action_label = "Read"
+            source_upper = "HACKER NEWS"
         elif source == "reddit":
-            source_label = "Reddit Posts"
+            source_label = "Posts"
             source_singular = "Post"
-            action_label = "Read Post"
+            action_label = "Read"
+            source_upper = "REDDIT"
         elif source == "github":
-            source_label = "GitHub Repositories"
+            source_label = "Repos"
             source_singular = "Repo"
-            action_label = "View Repo"
+            action_label = "View"
+            source_upper = "GITHUB"
         elif source == "arxiv":
-            source_label = "Research Papers"
+            source_label = "Papers"
             source_singular = "Paper"
-            action_label = "Read Paper"
+            action_label = "Read"
+            source_upper = "ARXIV"
         elif source == "blog":
-            source_label = "Blog Articles"
+            source_label = "Articles"
             source_singular = "Article"
-            action_label = "Read Article"
+            action_label = "Read"
+            source_upper = "BLOGS"
 
-        # Build Executive Synthesis card
-        if insights_html:
-            insights_html_block = f"""
-            <div class="insights-card">
-              <div class="insights-title">⭐ Executive AI Synthesis ({source_label})</div>
-              {insights_html}
-            </div>
-            """
-        else:
-            insights_html_block = ""
-
-        # Build Must Watch list
-        must_watch_html_list = []
-        if must_watch:
-            for a in must_watch:
-                summary = a.summary or "No summary available."
-                must_watch_html_list.append(f"""
-                <div class="must-watch-card">
-                  <h3><a href="{a.url}" target="_blank">{a.title}</a></h3>
-                  <div class="meta-row">
-                    <span class="channel-badge">{a.author}</span>
-                    <a class="btn-watch" href="{a.url}" target="_blank">{action_label} ➔</a>
-                  </div>
-                  <blockquote>{summary}</blockquote>
-                </div>
-                """)
-            must_watch_html = "\n".join(must_watch_html_list)
-        else:
-            must_watch_html = f'<p style="color:#64748b; font-style:italic; margin-bottom:20px;">No high-priority {source_label.lower()} cataloged today.</p>'
-
-        # Build Other Videos list
-        other_videos_html_list = []
-        if other_videos:
-            for a in other_videos:
-                desc = a.summary or "No description available"
-                other_videos_html_list.append(f"""
-                <li class="video-list-item">
-                  <a class="video-title-link" href="{a.url}" target="_blank">{a.title}</a>
-                  <span class="channel-badge-small">{a.author}</span>
-                  <p class="desc">{desc}</p>
-                </li>
-                """)
-            other_videos_html = "\n".join(other_videos_html_list)
-        else:
-            other_videos_html = f'<p style="color:#64748b; font-style:italic; padding:10px 0;">No other {source_label.lower()} uploads captured today.</p>'
-
-        # Build Reference Catalogue rows
-        reference_rows_list = []
+        # Build table rows for the top 3 items
+        table_rows = []
         for a in all_articles:
-            reference_rows_list.append(f"""
+            one_line = get_one_line_explanation(a.summary)
+            table_rows.append(f"""
             <tr>
-              <td><code>{a.author}</code></td>
-              <td>{a.title}</td>
-              <td><a class="ref-link" href="{a.url}" target="_blank">{source_singular} Link</a></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px; font-weight: 600; text-align: left; vertical-align: top; width: 35%;">
+                <a href="{a.url}" target="_blank" style="color: #0f172a; text-decoration: none; font-size: 14px;">{a.title}</a>
+                <div style="margin-top: 6px;">
+                  <span class="channel-badge-small" style="margin-left: 0; display: inline-block;">{a.author}</span>
+                </div>
+              </td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px; color: #475569; font-size: 13.5px; line-height: 1.5; text-align: left; vertical-align: top; width: 50%;">
+                {one_line}
+              </td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px; text-align: center; vertical-align: middle; width: 15%;">
+                <a class="ref-link" href="{a.url}" target="_blank" style="font-weight: 700; text-decoration: none; font-size: 13px;">{action_label} ➔</a>
+              </td>
             </tr>
             """)
-        reference_rows = "\n".join(reference_rows_list) if reference_rows_list else f'<tr><td colspan="3" style="text-align:center; color:#64748b;">No reference {source_label.lower()} available today.</td></tr>'
+            
+        rows_html = "\n".join(table_rows) if table_rows else f'<tr><td colspan="3" style="text-align:center; color:#64748b; padding: 16px;">No {source_label.lower()} found for today.</td></tr>'
 
         fragment = f"""
         <div class="source-section" style="margin-top: 40px; margin-bottom: 40px;">
-          <h2 style="font-size: 20px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; margin-bottom: 20px; text-transform: uppercase; color: #1e1b4b; letter-spacing: 0.5px;">🌐 {source_label}</h2>
+          <h2 style="font-size: 20px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; margin-bottom: 8px; text-transform: uppercase; color: #1e1b4b; letter-spacing: 0.5px;">SUB HEADING - {{INDEX}}: {source_upper}</h2>
+          <p style="font-size: 14px; font-weight: 700; color: #64748b; margin-top: 0; margin-bottom: 16px; text-transform: none; letter-spacing: 0.5px;">Top 3 {source_label} to Go through</p>
           
-          {insights_html_block}
-          
-          <div class="section-header" style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 12px; margin-top: 20px;">
-            🔥 Must Watch / Read
-          </div>
-          {must_watch_html}
-          
-          <div class="section-header" style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 12px; margin-top: 20px;">
-            🎥 More Releases & Updates
-          </div>
-          <ul class="video-list">
-            {other_videos_html}
-          </ul>
-          
-          <div class="section-header" style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 12px; margin-top: 20px;">
-            🔗 Reference Catalogue
-          </div>
-          <table class="ref-table">
+          <table class="ref-table" style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13.5px;">
             <thead>
-              <tr>
-                <th style="width: 25%;">Author/Source</th>
-                <th>Title</th>
-                <th style="width: 15%;">Link</th>
+              <tr style="background-color: #f8fafc;">
+                <th style="border: 1px solid #e2e8f0; padding: 10px 12px; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; text-align: left; width: 35%;">{source_singular} Title</th>
+                <th style="border: 1px solid #e2e8f0; padding: 10px 12px; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; text-align: left; width: 50%;">What it Explains</th>
+                <th style="border: 1px solid #e2e8f0; padding: 10px 12px; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; text-align: center; width: 15%;">Link</th>
               </tr>
             </thead>
             <tbody>
-              {reference_rows}
+              {rows_html}
             </tbody>
           </table>
         </div>
@@ -673,9 +653,7 @@ class InsightsService:
   <div class="wrapper">
     <div class="top-gradient-bar"></div>
     <div class="header">
-      <h1>Daily Developer Briefing</h1>
-      <p>Self-Hosted AI Tech Analyst & Executive Briefing Summary</p>
-      <div class="date-badge">{formatted_date}</div>
+      <h1>Tech News for {formatted_date}</h1>
     </div>
     <div class="content">
       {fragment_html}
