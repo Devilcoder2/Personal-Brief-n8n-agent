@@ -80,7 +80,8 @@ class PaperScraper(BaseScraper):
             
             for p in papers:
                 title = p.get("title", "")
-                paper_id = p.get("id")
+                paper_details = p.get("paper", {}) or {}
+                paper_id = paper_details.get("id")
                 if not paper_id:
                     continue
                 
@@ -107,8 +108,7 @@ class PaperScraper(BaseScraper):
                 upvotes = p.get("upvotes", 0)
                 
                 # Try to extract summary/authors from inner nested fields if they exist
-                paper_details = p.get("paper", {}) or {}
-                summary = paper_details.get("summary", "").replace("\n", " ").strip()
+                summary = (p.get("summary") or paper_details.get("summary") or "").replace("\n", " ").strip()
                 if not summary:
                     summary = f"Hugging Face Daily Paper with {upvotes} community discussions."
                 
