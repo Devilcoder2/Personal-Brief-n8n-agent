@@ -217,7 +217,7 @@ class InsightsService:
         }
 
         try:
-            with httpx.Client(timeout=60.0) as client:
+            with httpx.Client(timeout=180.0) as client:
                 response = client.post(url, json=payload)
                 response.raise_for_status()
                 result = response.json()
@@ -359,7 +359,7 @@ class InsightsService:
 
         fragment = f"""
         <div class="source-section" style="margin-top: 40px; margin-bottom: 40px;">
-          <h2 style="font-size: 20px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; margin-bottom: 8px; text-transform: uppercase; color: #1e1b4b; letter-spacing: 0.5px;">SUB HEADING - {{INDEX}}: {source_upper}</h2>
+          <h2 style="font-size: 20px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; margin-bottom: 8px; text-transform: uppercase; color: #1e1b4b; letter-spacing: 0.5px;">SUB HEADING - {{{{INDEX}}}}: {source_upper}</h2>
           <p style="font-size: 14px; font-weight: 700; color: #64748b; margin-top: 0; margin-bottom: 16px; text-transform: none; letter-spacing: 0.5px;">Top 3 {source_label} to Go through</p>
           
           <table class="ref-table" style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13.5px;">

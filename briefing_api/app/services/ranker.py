@@ -94,7 +94,7 @@ class RankingService:
         }
 
         try:
-            with httpx.Client(timeout=45.0) as client:
+            with httpx.Client(timeout=180.0) as client:
                 response = client.post(url, json=payload)
                 response.raise_for_status()
                 result = response.json()
